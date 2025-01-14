@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 #Section 1
-The dataset is a collection of polling place locations across the United States from 2012 to 2020. Its main variables are polling place location data and the election date for which the polling place operated. 
+The dataset is a collection of polling place locations across the United States from 2012 to 2020. Its main variables are polling place location data and the election date for which the polling place operated. In this project, we can track the number of polling places in each state and analyse how it changed from the 2012 election to the 2016 election to the 2020 election. 
 
 #Section 2
 In our killer graph, we hope to show how the number of polling places in the US changed from 2012 to 2020 and if any changes are specifically tied to a region or state in the US. 
