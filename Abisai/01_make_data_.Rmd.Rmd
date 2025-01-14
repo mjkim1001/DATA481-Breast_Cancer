@@ -1,0 +1,34 @@
+---
+title: "01_make_data_.Rmd"
+author: "Abisai Lujan"
+date: "2025-01-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library("tidyverse")
+```
+
+
+```{r}
+drought <- read.csv("drought.csv")
+(drought)
+```
+
+
+
+```{r}
+drought_fips <- read.csv("drought-fips.csv")
+(drought_fips)
+unique(drought_fips$State)
+```
+```{r}
+min(drought_fips$FIPS)
+drought_fips[35131,]
+```
+
