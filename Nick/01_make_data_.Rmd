@@ -1,0 +1,76 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+#Section 1
+The dataset is a collection of polling place locations across the United States from 2012 to 2020. Its main variables are polling place location data and the election date for which the polling place operated. In this project, we can track the number of polling places in each state and analyse how it changed from the 2012 election to the 2016 election to the 2020 election. 
+
+#Section 2
+In our killer graph, we hope to show how the number of polling places in the US changed from 2012 to 2020 and if any changes are specifically tied to a region or state in the US. 
+
+#Section 3
+
+```{r}
+#Code from Github to load dataset
+tuesdata <- tidytuesdayR::tt_load(2024, week = 3)
+
+polling_places <- tuesdata$polling_places
+```
+
+```{r} 
+#Code from github to clean data. May not run super cleanly on other computers besides Nick's. 
+library(tidyverse)
+library(here)
+library(fs)
+library(gh)
+
+#dir.create("C:/Users/nickl/Documents/College/DATA481-Breast_Cancer/Nick/data/2024/2024-01-16/", recursive = TRUE)
+#working_dir <- "C:/Users/nickl/Documents/College/DATA481-Breast_Cancer/Nick/data/2024/2024-01-16/"
+
+polling_places <- 
+  # Get the list of states that have data.
+  gh::gh("/repos/PublicI/us-polling-places/contents/data") |> 
+  purrr::map_chr("name") |> 
+  # For each state, get the list of CSV URLs.
+  purrr::map(
+    \(state) {
+      gh::gh(
+        glue::glue("/repos/PublicI/us-polling-places/contents/data/{state}/output")
+      ) |> 
+        purrr::map_chr("download_url")
+    }
+  ) |> 
+  unlist() |> 
+  readr::read_csv(
+    col_types = readr::cols(.default = readr::col_character())
+  ) |> 
+  # Some rows are duplicated.
+  dplyr::distinct() |> 
+  dplyr::mutate(
+    election_date = lubridate::ymd(election_date),
+    source_date = lubridate::ymd(source_date)
+  )
+
+readr::write_csv(
+  polling_places,
+  fs::path(working_dir, "polling_places.csv")
+)
+```
+
+```{r}
+cleanpollingplaces = read.csv("C:/Users/nickl/Documents/College/DATA481-Breast_Cancer/Nick/data/2024/2024-01-16/polling_places.csv")
+```
+
+```{r}
+head(cleanpollingplaces)
+```
+#Section 4
+The dataset has 15 variables and 461,445 observations. The variables are listed below: 
+```{r}
+names(cleanpollingplaces)
+#Dimensions
+ncol(cleanpollingplaces)
+nrow(cleanpollingplaces)
+```
+
