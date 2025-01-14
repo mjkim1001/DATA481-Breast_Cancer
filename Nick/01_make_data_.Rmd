@@ -12,14 +12,17 @@ In our killer graph, we hope to show how the number of polling places in the US 
 #Section 3
 
 ```{r}
-#Code from Github to load dataset
+#Don't need to run. 
+#Don't need to run. Code from Github to load dataset
 tuesdata <- tidytuesdayR::tt_load(2024, week = 3)
 
 polling_places <- tuesdata$polling_places
 ```
 
 ```{r} 
+#DON'T RUN THIS. Just run the code block below this one. 
 #Code from github to clean data. May not run super cleanly on other computers besides Nick's. 
+
 library(tidyverse)
 library(here)
 library(fs)
@@ -59,6 +62,7 @@ readr::write_csv(
 ```
 
 ```{r}
+#Run this code and below. 
 cleanpollingplaces = read.csv("C:/Users/nickl/Documents/College/DATA481-Breast_Cancer/Nick/data/2024/2024-01-16/polling_places.csv")
 ```
 
