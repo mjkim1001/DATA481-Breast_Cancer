@@ -1,0 +1,33 @@
+---
+title: "DATA481CLASS1"
+author: "Samuel Carlton"
+date: "`r Sys.Date()`"›
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+groundhog <- read_csv("groundhogs.csv")
+```
+
+```{r}
+head(groundhog)
+```
+
+In my killer graph, I hope to explain or show the accuracy of groundhogs predicting the arrival of the Spring season. I hope to draw connections from different groundhog prediction events around North America, whether it relates to the type of groundhog, the area or region in which it resides, or even the personality of the groundhog. 
+
+```{r}
+dim(groundhog)
+```
+```{r}
+str(groundhog)
+```
+
+
