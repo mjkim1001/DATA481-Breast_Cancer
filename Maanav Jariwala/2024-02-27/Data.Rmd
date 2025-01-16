@@ -1,0 +1,88 @@
+---
+title: "Data"
+author: "Maanav Jariwala"
+date: "2025-01-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(reshape2)
+```
+
+```{r}
+births <- read_csv("births.csv")
+deaths <- read_csv("deaths.csv")
+events <- read_csv("events.csv")
+```
+
+```{r}
+head(births)
+head(deaths)
+head(events)
+```
+
+```{r}
+# time series to see the births and deaths over time
+
+ggplot() +
+  geom_histogram(data = births, aes(x = year_birth), fill = "blue", alpha = 0.5, binwidth = 10) +
+  geom_histogram(data = deaths, aes(x = year_death), fill = "red", alpha = 0.5, binwidth = 10) +
+  labs(title = "Distribution of Births and Deaths Over Time",
+       x = "Year",
+       y = "Count") +
+  theme_minimal()
+```
+```{r}
+# Compute correlations
+correlation_data <- combined_data %>%
+  select(-decade) %>%
+  na.omit()
+
+# Melt the correlation matrix
+cor_melt <- melt(cor_matrix)
+
+# Plot the heatmap with correlation values
+ggplot(cor_melt, aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0) +
+  geom_text(aes(label = sprintf("%.2f", value)), color = "black", size = 4) + # Add correlation values
+  labs(title = "Heatmap of Correlations",
+       x = "Variables",
+       y = "Variables",
+       fill = "Correlation") +
+  theme_minimal()
+
+```
+
+```{r}
+# Add a century column to the events data
+events <- events %>% mutate(century = (year %/% 100 + 1))
+
+# Count events by century
+events_by_century <- events %>%
+  group_by(century) %>%
+  summarise(event_count = n())
+
+# Plot events by century
+ggplot(events_by_century, aes(x = as.factor(century), y = event_count)) +
+  geom_bar(stat = "identity", fill = "green") +
+  labs(title = "Number of Events by Century",
+       x = "Century",
+       y = "Event Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The distribution of births and deaths reveals historical trends, such as potential population growth periods or impacts of events like wars and pandemics.
+
+The number of events by century suggests increased human activity or record-keeping improvements. A study could explore the drivers behind these trends.
+
+The correlation heatmap provides insights into how events, births, and deaths are interrelated, for a starting point for deeper historical or sociological analysis.
+
