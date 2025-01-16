@@ -12,12 +12,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 https://github.com/rfordatascience/tidytuesday/blob/main/data/2022/2022-06-14/readme.md 
 
-```{r, eval = FALSE, include =FALSE}
+```{r, eval = FALSE, include=FALSE}
 library("tidyverse")
 ```
 
 
-```{r, include = FALSE}
+```{r, eval = FALSE, include = FALSE}
 drought <- read.csv("drought.csv")
 head(drought)
 tail(drought)
@@ -74,7 +74,7 @@ library(lubridate)
 
 
 ```{r}
-drought <- read.csv("drought.csv")
+drought <- read.csv("~/Documents/GitHub/DATA481-Breast_Cancer/Abisai/RData/drought.csv")
 head(drought)
 tail(drought)
 ```
