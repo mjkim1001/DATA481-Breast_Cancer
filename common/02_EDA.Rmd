@@ -26,14 +26,20 @@ head(drought)
 
 # 1. Identify response variables
 
+My choice: area_pct	(double) Percent of state currently in that drought category
+
 * Examine distributions
 
+First things first! How many zeros are there?
+
 ```{r}
-drought %>%
-  mutate(map_date = as.Date(as.character(map_date), format = "%Y%m%d")) %>%
-  ggplot()+
-  geom_tile(aes(x=map_date, y=state_abb, fill=area_pct)) 
+sum(drought$area_pct == 0.0)
+sum(drought$area_pct == 0.0)/nrow(drought)
 ```
+
+55\% of the data have zeros.
+
+Distribution of non-zero values
 
 ```{r}
 drought %>%
@@ -41,6 +47,15 @@ drought %>%
   ggplot() +
   geom_histogram(aes(x=log10(area_pct)))
 ```
+
+
+```{r}
+drought %>%
+  mutate(map_date = as.Date(as.character(map_date), format = "%Y%m%d")) %>%
+  ggplot()+
+  geom_tile(aes(x=map_date, y=state_abb, fill=log10(area_pct))) 
+```
+
 
 # 2. Identify explanatory variables
 
