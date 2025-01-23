@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 https://github.com/rfordatascience/tidytuesday/blob/main/data/2022/2022-06-14/readme.md 
 
-```{r, eval = FALSE, include=FALSE}
+```{r, include=FALSE}
 library(tidyverse)
 library(ggplot2)
 ```
