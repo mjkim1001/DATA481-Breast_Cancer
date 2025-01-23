@@ -1,0 +1,86 @@
+---
+title: "01_make_data_.Rmd"
+author: "Abisai Lujan"
+date: "2025-01-14"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+https://github.com/rfordatascience/tidytuesday/blob/main/data/2022/2022-06-14/readme.md 
+
+```{r, eval = FALSE, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+```{r}
+drought <- read.csv("./RData/drought.csv")
+head(drought)
+```
+
+
+# 1. Identify response variables
+
+* Examine distributions
+
+```{r}
+drought %>%
+  mutate(map_date = as.Date(as.character(map_date), format = "%Y%m%d")) %>%
+  ggplot()+
+  geom_tile(aes(x=map_date, y=state_abb, fill=area_pct)) 
+```
+
+```{r}
+drought %>%
+  filter(area_pct > 0) %>%
+  ggplot() +
+  geom_histogram(aes(x=log10(area_pct)))
+```
+
+# 2. Identify explanatory variables
+
+* Make histograms or bar graphs
+
+* Look for imbalance
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
