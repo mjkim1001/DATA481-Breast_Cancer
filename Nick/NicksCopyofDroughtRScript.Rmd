@@ -1,126 +1,17 @@
----
-title: "01_make_data_.Rmd"
-author: "Abisai Lujan"
-date: "2025-01-14"
-output:
-  pdf_document: default
-  html_document: default
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
+setwd("C:\\Users\\nickl\\Documents\\College\\DATA481-Breast_Cancer\\Nick")
 ```
-https://github.com/rfordatascience/tidytuesday/blob/main/data/2022/2022-06-14/readme.md 
-
-```{r, eval = FALSE, include=FALSE}
-library("tidyverse")
-```
-
-
-```{r, eval = FALSE, include = FALSE}
-drought <- read.csv("drought.csv")
-head(drought)
-tail(drought)
-```
-
-
-
-```{r, eval = FALSE, include = FALSE}
-drought_fips <- read.csv("drought-fips.csv")
-(drought_fips)
-unique(drought_fips$State)
-```
-
-```{r, eval = FALSE, include = FALSE}
-(names(drought_fips))
-(names(drought))
-```
-
-
-
-
-
-```{r, eval = FALSE, include = FALSE}
-(min(drought_fips$DSCI))
-(max(drought_fips$DSCI))
-```
-
-
-```{r, eval = FALSE, include = FALSE}
-summary(drought_fips)
-```
-
-
-```{r, eval = FALSE, include = FALSE}
-hist(drought_fips$FIPS, main="fips", xlab="percent")
-```
-
-
-
-
-
-
-
-
-
-
 
 
 
 ```{r}
-library(tidyverse)
-library(lubridate)
-```
-
-
-```{r}
-drought <- read.csv("~/Documents/GitHub/DATA481-Breast_Cancer/Abisai/RData/drought.csv")
+drought = read.csv(".")
 head(drought)
-tail(drought)
 ```
-Data set on U.S. Droughts from TidyTuesday Github data. Source: U.S. Drought Monitor which describes drought levels from 2001 to 2021 among each state. 
+```{r}
+cor(drought$area_total, drought$pop_total)
+```
+```{r}
 
-
-Project: Analyzing drought conditions across the U.S. over ~20 years. State 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
 
