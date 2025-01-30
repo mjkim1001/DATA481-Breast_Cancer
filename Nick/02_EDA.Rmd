@@ -1,0 +1,57 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+drought <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2021/2021-07-20/drought.csv')
+```
+
+```{r}
+head(drought)
+```
+```{r}
+drought$mapyear = substr(drought$map_date, 1, 4)
+head(drought)
+```
+
+```{r} 
+#Adding drought category indicator variable
+drought$droughtcategoryindicator = 
+
+```
+
+```{r}
+droughtlvltypes = unique(drought$drought_lvl)
+droughtlvltypes = as.list(droughtlvltypes)
+#print(droughtlvltypes)
+
+years = unique(drought$mapyear)
+years = as.list(years)
+```
+
+```{r}
+years = unlist(years)
+```
+
+```{r}
+fulldroughtlist = setNames(vector("list", length(years)), years)
+print(names(fulldroughtlist))
+```
+
+```{r}
+for (j in years){
+  yearsubsettemp = subset(drought, drought$mapyear == j)
+  AffectPopList = list()
+  for (i in droughtlvltypes) {
+    subsettemp = subset(yearsubsettemp, drought_lvl == i)
+    tempsum = sum(subsettemp$pop_total)
+    AffectPopList[[i]] = tempsum}
+  fulldroughtlist[[j]] = AffectPopList}
+
+```
+
+```{r}
+length(fulldroughtlist["2021"])
+```
+
