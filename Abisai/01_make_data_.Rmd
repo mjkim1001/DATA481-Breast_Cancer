@@ -10,50 +10,88 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-https://github.com/rfordatascience/tidytuesday/blob/main/data/2022/2022-06-14/readme.md 
-
-```{r, eval = FALSE, include=FALSE}
-library("tidyverse")
-```
 
 
-```{r, eval = FALSE, include = FALSE}
-drought <- read.csv("/Users/abisailujan/Documents/GitHub/DATA481-Breast_Cancer/Abisai")
-head(drought)
-tail(drought)
+```{r}
+library(tidyverse)
+library(lubridate)
+library(tidytuesdayR)
 ```
 
 
 
-```{r, eval = FALSE, include = FALSE}
-drought_fips <- read.csv("drought-fips.csv")
-(drought_fips)
-unique(drought_fips$State)
+**Load drought area percent data**
+```{r}
+drought_area_pct <- read.csv("drought_area_pct.csv")
+drought_area_pct
+```
+```{r}
+str(drought_area_pct)
+```
+Change `ValidStart` and `ValidEnd` dates to numeric
+```{r}
+drought_area_pct$ValidStart=as.numeric(gsub("-","",drought_area_pct$ValidStart))
+drought_area_pct$ValidEnd=as.numeric(gsub("-","", drought_area_pct$ValidEnd))
 ```
 
-```{r, eval = FALSE, include = FALSE}
-(names(drought_fips))
-(names(drought))
-```
-
-
-
-
-
-```{r, eval = FALSE, include = FALSE}
-(min(drought_fips$DSCI))
-(max(drought_fips$DSCI))
-```
-
-
-```{r, eval = FALSE, include = FALSE}
-summary(drought_fips)
+```{r}
+head(drought_area_pct)
 ```
 
 
-```{r, eval = FALSE, include = FALSE}
-hist(drought_fips$FIPS, main="fips", xlab="percent")
+**Load area total data**
+
+```{r}
+drought_area_total <- read.csv("drought_area_total.csv")
+head(drought_area_total)
 ```
+Change `ValidStart` and `ValidEnd` to numeric
+```{r}
+drought_area_total$ValidStart=as.numeric(gsub("-","",drought_area_total$ValidStart))
+drought_area_total$ValidEnd=as.numeric(gsub("-","", drought_area_total$ValidEnd))
+```
+```{r}
+head(drought_area_total)
+```
+
+
+
+**Load drought population percent**
+
+```{r}
+drought_pop_pct <- read.csv("drought_pop_pct.csv")
+head(drought_pop_pct)
+```
+Change `ValidStart` and `ValidEnd` dates to numeric
+```{r}
+drought_pop_pct$ValidStart=as.numeric(gsub("-","",drought_pop_pct$ValidStart))
+drought_pop_pct$ValidEnd=as.numeric(gsub("-","",drought_pop_pct$ValidEnd))
+```
+```{r}
+head(drought_pop_pct)
+```
+
+
+
+**Load drought population total data**
+```{r}
+drought_pop_total <- read.csv("drought_pop_total.csv")
+head(drought_pop_total)
+```
+Change `ValidStart` and `ValidEnd` dates to numeric 
+```{r}
+drought_pop_total$ValidStart=as.numeric(gsub("-","",drought_pop_total$ValidStart))
+drought_pop_total$ValidEnd=as.numeric(gsub("-","",drought_pop_total$ValidEnd))
+```
+```{r}
+head(drought_pop_total)
+```
+
+
+
+
+
+
 
 
 
@@ -69,17 +107,82 @@ hist(drought_fips$FIPS, main="fips", xlab="percent")
 
 ```{r}
 library(tidyverse)
-library(lubridate)
-library(tidytuesdayR)
+
+read_and_prep <- function(file, type){
+  read_csv(paste0("2021/2021-07-20/", file)) %>% 
+    pivot_longer(cols = None:D4, names_to = "drought_lvl", values_to = type) %>% 
+    janitor::clean_names()
+  
+}
+
+state_area_pct <- read_and_prep("drought_area_pct.csv", "area_pct")
+state_area <- read_and_prep("drought_area_total.csv", "area_total")
+state_pct_pop <- read_and_prep("drought_pop_pct.csv", "pop_pct")
+state_pop <- read_and_prep("drought_pop_total.csv", "pop_total")
+
+all_df <- state_area_pct %>% 
+  left_join(state_area) %>% 
+  left_join(state_pct_pop) %>% 
+  left_join(state_pop) %>% 
+  rename(state_abb = state_abbreviation, stat_fmt = statistic_format_id)
 ```
 
 
-```{r}
-drought <- read.csv("~/Documents/GitHub/DATA481-Breast_Cancer/Abisai/RData/drought.csv")
-head(drought)
-tail(drought)
-```
-```{r}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 read_and_prep <- function(file, type){
   read_csv(paste0("2021/2021-07-20/", file)) %>% 
     pivot_longer(cols = None:D4, names_to = "drought_lvl", values_to = type) %>% 
@@ -102,12 +205,6 @@ all_df %>%
   write_csv("2021/2021-07-20/drought.csv")
 
 (state_area_pct)
-```
-
-
-```{r}
-
-```
 
 
 
