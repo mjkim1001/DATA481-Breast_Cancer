@@ -12,6 +12,7 @@ drought <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/ti
 ```{r}
 head(drought)
 ```
+
 ```{r}
 #Used for pipes
 library(dplyr)
