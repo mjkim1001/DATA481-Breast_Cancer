@@ -1,0 +1,241 @@
+---
+title: "droughtEDA"
+author: "Samuel Carlton"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+drought_pct <- read.csv("~/Downloads/drought_area_pct.csv")
+head(drought_pct)
+```
+
+```{r}
+#unique(drought_pct$StateAbbreviation)
+```
+
+
+```{r}
+library(dplyr)
+
+drought_pct <- drought_pct %>%
+  mutate(Moderate_Drought = None + D0 + D1,
+         Severe_Drought = D2 + D3 + D4)
+
+head(drought_pct)
+
+```
+
+
+
+# Cali, Nevada, NM, Utah, Arizona
+```{r}
+# Filter dataset for selected states
+drought_pct_filtered <- drought_pct %>%
+  filter(StateAbbreviation %in% c("CA", "NV", "NM", "UT", "AZ"))
+
+# Display the first few rows
+head(drought_pct_filtered)
+```
+
+```{r}
+# Select only the necessary columns
+drought_pct_filtered <- drought_pct_filtered %>%
+  select(MapDate, StateAbbreviation, ValidStart, Moderate_Drought, Severe_Drought)
+
+# Display the first few rows
+head(drought_pct_filtered)
+```
+
+```{r}
+# Load necessary library
+library(dplyr)
+library(lubridate)
+
+# Convert MapDate column to a proper Date format
+FinalDrought <- drought_pct_filtered %>%
+  mutate(MapDate = ymd(MapDate))
+
+# Display the first few rows to verify
+head(FinalDrought)
+
+```
+
+```{r}
+library(ggplot2)
+
+# Line graph for Moderate and Severe Drought
+ggplot(FinalDrought, aes(x = MapDate)) +
+  geom_line(aes(y = Moderate_Drought, color = "Moderate Drought"), size = 1) +
+  geom_line(aes(y = Severe_Drought, color = "Severe Drought"), size = 1) +
+  facet_wrap(~StateAbbreviation, scales = "free_y") +  # Separate plots for each state
+  labs(title = "Drought Trends Over Time",
+       x = "Date",
+       y = "Drought Percentage",
+       color = "Drought Severity") +
+  theme_minimal()
+```
+```{r}
+yearly_avg_severe <- FinalDrought %>%
+  mutate(Year = format(MapDate, "%Y")) %>%
+  group_by(Year, StateAbbreviation) %>%
+  summarize(Avg_Severe = mean(Severe_Drought, na.rm = TRUE))
+
+ggplot(yearly_avg_severe, aes(x = Year, y = Avg_Severe, color = StateAbbreviation, group = StateAbbreviation)) +
+  geom_line() +
+  labs(title = "Yearly Trends in Severe Drought",
+       x = "Year",
+       y = "Avg Severe Drought (%)") +
+  theme_minimal()
+
+```
+
+```{r}
+ggplot(FinalDrought, aes(x = StateAbbreviation, y = Moderate_Drought, fill = StateAbbreviation)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Moderate Drought by State", y = "Moderate Drought (%)") +
+  theme_minimal()
+  
+ggplot(FinalDrought, aes(x = StateAbbreviation, y = Severe_Drought, fill = StateAbbreviation)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Severe Drought by State", y = "Severe Drought (%)") +
+  theme_minimal()
+
+```
+
+
+```{r}
+library(reshape2)
+
+FinalDrought_melted <- melt(FinalDrought, id.vars = c("MapDate", "StateAbbreviation"), 
+                            measure.vars = c("Moderate_Drought", "Severe_Drought"))
+
+ggplot(FinalDrought_melted, aes(x = MapDate, y = StateAbbreviation, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient(low = "yellow", high = "red") +
+  facet_wrap(~variable) +
+  labs(title = "Drought Severity Heatmap",
+       x = "Date",
+       y = "State",
+       fill = "Drought Level") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+FinalDrought$Month <- format(FinalDrought$MapDate, "%m")
+
+avg_monthly_severe <- FinalDrought %>%
+  group_by(StateAbbreviation, Month) %>%
+  summarize(Avg_Severe = mean(Severe_Drought, na.rm = TRUE))
+
+ggplot(avg_monthly_severe, aes(x = Month, y = Avg_Severe, color = StateAbbreviation, group = StateAbbreviation)) +
+  geom_line() +
+  labs(title = "Seasonal Trends in Severe Drought",
+       x = "Month",
+       y = "Avg Severe Drought (%)") +
+  theme_minimal()
+
+```
+# Identify Peak Drought Nmonths for Each State
+```{r}
+peak_months <- FinalDrought %>%
+  group_by(StateAbbreviation, Month) %>%
+  summarize(Avg_Severe = mean(Severe_Drought, na.rm = TRUE)) %>%
+  arrange(StateAbbreviation, desc(Avg_Severe)) %>%
+  slice(1)  # Get the peak month for each state
+
+print(peak_months)
+
+```
+# Compare Seasonality Over Different Time Periods
+```{r}
+FinalDrought$Decade <- ifelse(FinalDrought$MapDate < "2010-01-01", "2000-2010", "2011-2023")
+
+seasonal_trends_by_decade <- FinalDrought %>%
+  group_by(Decade, Month, StateAbbreviation) %>%
+  summarize(Avg_Severe = mean(Severe_Drought, na.rm = TRUE))
+
+ggplot(seasonal_trends_by_decade, aes(x = Month, y = Avg_Severe, color = StateAbbreviation, group = StateAbbreviation)) +
+  geom_line() +
+  facet_wrap(~Decade) +
+  labs(title = "Severe Drought Seasonality by Decade",
+       x = "Month",
+       y = "Avg Severe Drought (%)") +
+  theme_minimal()
+
+```
+
+# Compare Drought Recovery Speed Between States
+```{r}
+state_recovery_summary <- FinalDrought %>%
+  group_by(StateAbbreviation) %>%
+  summarize(
+    Min_Recovery = min(Drought_Recovery, na.rm = TRUE),
+    Q1_Recovery = quantile(Drought_Recovery, 0.25, na.rm = TRUE),
+    Median_Recovery = median(Drought_Recovery, na.rm = TRUE),
+    Mean_Recovery = mean(Drought_Recovery, na.rm = TRUE),
+    Q3_Recovery = quantile(Drought_Recovery, 0.75, na.rm = TRUE),
+    Max_Recovery = max(Drought_Recovery, na.rm = TRUE),
+    Count_Observations = n()
+  )
+
+print(state_recovery_summary)
+```
+Why are Q1, Median, and Q3 almost always 0? This suggests most months did not experience a change in severe drought conditions. 
+
+# Check distribution of Drought_Recovery values to confirm if extreme values occure in only a few months.
+```{r}
+ggplot(FinalDrought, aes(x = Drought_Recovery)) +
+  geom_histogram(binwidth = 5, fill = "blue", alpha = 0.7) +
+  facet_wrap(~StateAbbreviation, scales = "free_y") +
+  labs(title = "Distribution of Drought Recovery Rates by State",
+       x = "Drought Recovery (%)",
+       y = "Count") +
+  theme_minimal()
+
+```
+Most values clustered at 0, so may be better to focus only on periods of significant recovery.
+
+# Identify States with the Fastest Recovery Rates
+```{r}
+fast_recovery_events <- FinalDrought %>%
+  filter(Drought_Recovery < -30) %>%  # Only major drops
+  arrange(MapDate)
+
+print(fast_recovery_events)
+
+```
+Why/how did these recovery events occur?
+
+
+# Compare Recovery Rates Over Time
+```{r}
+FinalDrought$Decade <- ifelse(FinalDrought$MapDate < "2010-01-01", "2000-2010", "2011-2023")
+
+recovery_trends <- FinalDrought %>%
+  group_by(Decade, StateAbbreviation) %>%
+  summarize(Avg_Recovery = mean(Drought_Recovery, na.rm = TRUE))
+
+ggplot(recovery_trends, aes(x = Decade, y = Avg_Recovery, fill = StateAbbreviation)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Average Drought Recovery Speed Over Time",
+       x = "Decade",
+       y = "Avg Recovery (%)") +
+  theme_minimal()
+
+```
+Recovery seems faster in the most recent decade. Why?
+
+# Find States with the Most Extreme Drought Swings
+```{r}
+volatility <- FinalDrought %>%
+  group_by(StateAbbreviation) %>%
+  summarize(Std_Dev_Recovery = sd(Drought_Recovery, na.rm = TRUE))
+
+print(volatility)
+
+```
+
