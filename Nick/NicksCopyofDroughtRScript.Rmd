@@ -1,0 +1,17 @@
+```{r}
+setwd("C:\\Users\\nickl\\Documents\\College\\DATA481-Breast_Cancer\\Nick")
+```
+
+
+
+```{r}
+drought = read.csv(".")
+head(drought)
+```
+```{r}
+cor(drought$area_total, drought$pop_total)
+```
+```{r}
+
+```
+

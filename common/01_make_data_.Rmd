@@ -1,0 +1,64 @@
+---
+title: "01_make_data_.Rmd"
+author: "Abisai Lujan"
+date: "2025-01-14"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+https://github.com/rfordatascience/tidytuesday/blob/main/data/2022/2022-06-14/readme.md 
+
+```{r, eval = FALSE, include=FALSE}
+library("tidyverse")
+```
+
+
+```{r}
+drought <- read.csv("./RData/drought.csv")
+summary(drought)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
