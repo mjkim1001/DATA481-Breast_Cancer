@@ -15,9 +15,11 @@ drought$mapyear = substr(drought$map_date, 1, 4)
 head(drought)
 ```
 
+```{r} 
+#Adding drought category indicator variable
+drought$droughtcategoryindicator = 
 
-#Identify Response Variables
-Response Variable: Drought_lvl
+```
 
 ```{r}
 droughtlvltypes = unique(drought$drought_lvl)

@@ -1,0 +1,76 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+#Loading full dataset
+drought <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2021/2021-07-20/drought.csv')
+```
+```{r}
+head(drought)
+```
+```{r}
+#Used for pipes
+library(dplyr)
+```
+
+
+```{r}
+#Separate out California, Arizona, Nevada, New Mexico, Utah 
+southwestdrought = drought %>% filter(state_abb %in% c("CA", "NV", "NM", "UT", "AZ"))
+print(unique(southwestdrought$state_abb))
+```
+
+```{r}
+#head(southwestdrought)
+```
+```{r}
+#Adding years column
+southwestdrought$mapyear = substr(southwestdrought$map_date, 1, 6)
+```
+```{r}
+#Filtering only for cases of extreme drought (D2, D3, or D4)
+extremeSWdrought = southwestdrought %>% filter(drought_lvl %in% c("D2", "D3","D4"))
+```
+
+```{r}
+#Getting unique year identifiers
+years = unique(extremeSWdrought$mapyear)
+years = as.list(years)
+#print(years)
+```
+
+```{r}
+#Setting up 2 empty dictionarys with years as the keys: one of population one for area
+POPextSWdroughtlist = setNames(vector("list", length(years)), years)
+AreaextSWdroughtlist = setNames(vector("list", length(years)), years)
+```
+
+```{r}
+#Function to sum cases of extreme drought in each year and add them to the named list
+for (j in years){
+  yearsubsettemp = subset(extremeSWdrought, extremeSWdrought$mapyear == j)
+  POPextSWdroughtlist[[j]] = sum(yearsubsettemp$pop_total)
+  AreaextSWdroughtlist[[j]] = sum(yearsubsettemp$area_total)}
+
+```
+
+
+```{r}
+#Graphing affected populations and area affected by year along with trend lines
+plot(years, POPextSWdroughtlist, main = "Population Affected by Ext. Drought in SW Per Month")
+popmod = lm(as.numeric(unlist(POPextSWdroughtlist)) ~ as.numeric(unlist(years)))
+abline(popmod)
+plot(years, AreaextSWdroughtlist, main = "Area Affected by Ext. Drought in SW Per Month")
+areamod = lm(as.numeric(unlist(AreaextSWdroughtlist)) ~ as.numeric(unlist(years)))
+abline(areamod)
+```
+
+```{r}
+#Looking at PopMod
+summary(popmod)
+```
+
