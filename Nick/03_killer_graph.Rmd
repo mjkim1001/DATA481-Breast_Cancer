@@ -75,3 +75,56 @@ abline(areamod)
 summary(popmod)
 ```
 
+```{r}
+# Load necessary libraries
+library(tidyverse)
+library(lubridate)
+
+# Convert map_date to Date format
+drought <- drought %>%
+  mutate(date = ymd(map_date))
+
+# Define regions
+region_map <- list(
+  "Northeast" = c("ME", "NH", "VT", "MA", "RI", "CT", "NY", "NJ", "PA"),
+  "Southeast" = c("DE", "MD", "VA", "WV", "KY", "NC", "SC", "GA", "FL", "AL", "TN", "MS"),
+  "Midwest" = c("OH", "MI", "IN", "IL", "WI", "MN", "IA", "MO", "ND", "SD", "NE", "KS"),
+  "Southwest" = c("TX", "OK", "NM", "AZ"),
+  "Northwest" = c("ID", "MT", "WY", "OR", "WA"),
+  "West" = c("CA", "NV", "UT", "CO")
+)
+
+# Assign regions to states
+drought <- drought %>%
+  mutate(region = map_chr(state_abb, ~{
+    region_name <- names(region_map)[sapply(region_map, function(states) .x %in% states)]
+    if (length(region_name) > 0) region_name else "Other"
+  }))
+
+# Filter for D4 drought only
+drought_d4 <- drought %>%
+  filter(drought_lvl == "D4")
+
+# Aggregate: Check if any state in a region had D4 drought on a given date
+drought_region <- drought_d4 %>%
+  group_by(region, date) %>%
+  summarize(d4_present = any(area_pct > 0), .groups = "drop")
+
+region_order <- drought_region %>%
+  group_by(region) %>%
+  summarize(d4_count = sum(d4_present)) %>%
+  arrange(desc(d4_count)) %>%
+  pull(region)
+
+# Create heatmap
+ggplot(drought_region, aes(x = date, y = factor(region, levels = region_order), fill = d4_present)) +
+  geom_tile() +
+  scale_fill_manual(values = c("FALSE" = "white", "TRUE" = "red")) +
+  labs(title = "D4 Drought Incidence by Region Over Time",
+       x = "Date",
+       y = "Region",
+       fill = "D4 Drought") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
