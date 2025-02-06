@@ -77,8 +77,9 @@ summary(popmod)
 
 ```{r}
 # Load necessary libraries
-library(tidyverse)
-library(lubridate)
+#library(tidyverse)
+
+#library(lubridate)
 
 # Convert map_date to Date format
 drought <- drought %>%
@@ -90,8 +91,9 @@ region_map <- list(
   "Southeast" = c("DE", "MD", "VA", "WV", "KY", "NC", "SC", "GA", "FL", "AL", "TN", "MS"),
   "Midwest" = c("OH", "MI", "IN", "IL", "WI", "MN", "IA", "MO", "ND", "SD", "NE", "KS"),
   "Southwest" = c("TX", "OK", "NM", "AZ"),
-  "Northwest" = c("ID", "MT", "WY", "OR", "WA"),
-  "West" = c("CA", "NV", "UT", "CO")
+  "Rockies" = c("ID", "MT", "WY",
+                  "CO","UT","NV"),
+  "West" = c("CA","OR", "WA")
 )
 
 # Assign regions to states
@@ -128,3 +130,41 @@ ggplot(drought_region, aes(x = date, y = factor(region, levels = region_order), 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+```{r}
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+
+# Define key El Niño and La Niña years
+el_nino_years <- c( 2015)  # Strong El Niño events
+la_nina_years <- c(2010)  # Strong La Niña events
+
+# Convert to date format (assuming drought data is monthly)
+el_nino_dates <- as.Date(paste0(el_nino_years, "-01-01"))
+la_nina_dates <- as.Date(paste0(la_nina_years, "-01-01"))
+
+# Create heatmap with vertical lines for El Niño and La Niña
+ggplot(drought_region, aes(x = date, y = factor(region, levels = region_order), fill = d4_present)) +
+  geom_tile() +
+  scale_fill_manual(values = c("FALSE" = "white", "TRUE" = "red")) +
+  
+  # Add vertical lines for El Niño years (red)
+  geom_vline(xintercept = as.numeric(el_nino_dates), color = "red", linetype = "dashed", size = 1) +
+  
+  # Add vertical lines for La Niña years (blue)
+  geom_vline(xintercept = as.numeric(la_nina_dates), color = "blue", linetype = "dashed", size = 1) +
+  
+  # Labels for clarity
+  annotate("text", x = el_nino_dates, y = 1, label = "El Niño", color = "red", angle = 90, vjust = -0.5, size = 4) +
+  annotate("text", x = la_nina_dates, y = 1, label = "La Niña", color = "blue", angle = 90, vjust = -0.5, size = 4) +
+  
+  # Formatting
+  labs(title = "D4 Drought Incidence by Region Over Time",
+       x = "Date",
+       y = "Region",
+       fill = "D4 Drought") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+

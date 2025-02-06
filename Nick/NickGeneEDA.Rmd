@@ -1,0 +1,28 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+setwd("C:/Users/nickl/Documents/College/DATA 481 - Gene Data")
+gexp = read.csv("gene_expression.csv")
+gemap = read.csv("gene_mappings.csv")
+gemeta = read.csv("metadata.csv")
+head(gexp)
+head(gemap)
+head(gemeta)
+```
+```{r}
+dim(gexp)
+```
+```{r}
+#transposes gene expression df to prepare for join
+gexp = as.data.frame(t(gexp))
+head(gexp)
+```
+
+```{r}
+fulldf = merge(gexp, gemeta, by.x = "X", by.y = "mRNA" )
+merg
+```
+
