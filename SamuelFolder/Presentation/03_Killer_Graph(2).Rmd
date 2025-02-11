@@ -1,0 +1,194 @@
+---
+title: "**03_Killer_Graph**"
+author: "Samuel Carlton"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(png)
+library(grid)
+```
+
+```{r}
+# Load dataset
+drought_pct <- read.csv("~/Downloads/drought_area_pct.csv")
+
+# Convert ValidStart and ValidEnd columns to Date format
+drought_pct$ValidStart <- as.Date(drought_pct$ValidStart)
+drought_pct$ValidEnd <- as.Date(drought_pct$ValidEnd)
+
+#head(drought_pct)
+```
+
+# **Introduction**
+
+### This report analyzes **drought trends across U.S. regions**.
+
+---
+
+## Dataset Overview
+
+#### - This dataset contains weekly drought percentages for each U.S. state.
+
+#### - The drought severity levels range from **D0 (Dry) to D4 (Extreme Drought)**.
+
+#### - Data spans multiple decades and covers all U.S. regions.
+
+## Research Questions
+
+#### - How frequently do **D4 droughts ≥ 20%** occur in different regions?
+
+#### - How has drought severity evolved across regions over time?
+
+------------------------------------------------------------------------
+
+## **Methodology**
+
+### Regional Classifications
+
+#### The dataset is grouped into **six regions**:
+
+#### - **Pacific:** CA, OR, WA
+
+#### - **Rocky Mountains:** MT, ID, WY, NV, UT, CO
+
+#### - **Southwest:** AZ, NM, OK, TX
+
+#### - **Midwest:** ND, SD, NE, KS, MN, IA, MO, WI, IL, IN, OH, MI
+
+#### - **Southeast:** AR, LA, MS, TN, KY, AL, GA, SC, NC, FL, VA, WV
+
+#### - **Northeast:** ME, NH, VT, MA, RI, CT, NY, PA, NJ, DE, MD  
+
+```{r}
+knitr::include_graphics("~/Downloads/United States Regions.png")
+```
+
+------------------------------------------------------------------------
+
+# **Results & Analysis**
+
+### Occurrences of D4 Drought Level ≥ 20% by Region
+
+#### - This scatter plot highlights the frequency of extreme droughts per region over time.
+
+#### - Darker clusters indicate prolonged drought periods.
+
+```{r}
+# Define region classification
+region_map <- data.frame(
+  StateAbbreviation = c("WA", "OR", "CA", 
+                        "MT", "ID", "WY", "NV", "UT", "CO",
+                        "AZ", "NM", "OK", "TX",
+                        "ND", "SD", "NE", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "OH", "MI",
+                        "AR", "LA", "MS", "TN", "KY", "AL", "GA", "SC", "NC", "FL", "VA", "WV",
+                        "ME", "NH", "VT", "MA", "RI", "CT", "NY", "PA", "NJ", "DE", "MD"),
+  Region = c(rep("Pacific", 3),
+             rep("Rocky Mountains", 6),
+             rep("Southwest", 4),
+             rep("Midwest", 12),
+             rep("Southeast", 12),
+             rep("Northeast", 11))
+)
+
+# Merge region info into the dataset
+drought_with_region <- merge(drought_pct, region_map, by = "StateAbbreviation")
+
+# Filter for D4 drought level >= 20%
+filtered_data <- drought_with_region %>%
+  filter(D4 >= 20)
+
+# Define region colors
+region_colors <- c(
+  "Midwest" = "#E57373",        
+  "Northeast" = "#BDB76B",      
+  "Pacific" = "#4CAF50",        
+  "Rocky Mountains" = "#00ACC1",
+  "Southeast" = "#64B5F6",      
+  "Southwest" = "#BA68C8"
+)
+
+# Ensure correct region order
+filtered_data$Region <- factor(filtered_data$Region, levels = c(
+  "Midwest", "Northeast", "Pacific", "Rocky Mountains", "Southeast", "Southwest"
+))
+
+# Plot occurrences of D4 drought level ≥ 20% by region
+ggplot(filtered_data, aes(x = ValidStart, y = Region, color = Region)) +
+  geom_point(size = 2) +  scale_color_manual(values = region_colors) +  
+  labs(
+    title = "Occurrences of D4 Drought Level ≥ 20% by Region",
+    x = "Time",
+    y = "Region"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_line(color = "gray", linetype = "dashed"),
+    panel.grid.minor = element_blank(),
+    legend.position = "none",
+    axis.text.y = element_text(face = "bold", size = 12),
+    axis.text.x = element_text(size = 10)
+  )
+
+```
+
+## **Drought Severity Trends by Region**
+
+#### - The following plots track the fluctuations of D4 drought levels over time.
+
+#### - A red dashed line marks the 20% severity threshold.
+
+```{r}
+# Convert ValidStart column to date format
+drought_with_region$ValidStart <- as.Date(drought_with_region$ValidStart)
+
+# Plot drought trends for each region
+ggplot(drought_with_region, aes(x = ValidStart, y = D4, group = Region)) +
+  geom_line(aes(color = Region), size = 1) +  
+  geom_hline(yintercept = 20, linetype = "dashed", color = "red", size = 1) + 
+  labs(
+    title = "D4 Drought Level Trends by Region",
+    x = "Date",
+    y = "Percentage of Area in D4 Drought"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    strip.text = element_text(size = 12, face = "bold"),
+    panel.grid.major = element_line(color = "gray", linetype = "dashed"),
+    panel.grid.minor = element_blank()
+  ) +
+  facet_wrap(~Region, ncol = 2, scales = "free_y")
+
+```
+
+------------------------------------------------------------------------
+
+# **Discussion & Key Takeaways**
+
+### **Insights from the Data**
+
+#### - Southwest & Pacific regions show frequent and prolonged severe drought periods.
+
+#### - Midwest & Northeast experience fewer extreme droughts but still cross the 20% severity threshold occasionally.
+
+#### - Drought trends suggest climate variability across regions, with some showing cyclical patterns of drought severity.
+
+### **Future Research Directions**
+
+#### - How do temperature and precipitation trends correlate with drought severity? 
+
+#### - Can we predict future extreme drought occurrences based on past trends?
+
+### **Conclusion**
+
+#### - This analysis provides a regional breakdown of severe drought events. 
+
+#### - Understanding historical drought patterns helps in predicting future water scarcity risks. 
+
+#### - Further studies could integrate climate models to enhance drought forecasting.
