@@ -1,0 +1,153 @@
+---
+title: "02_EDA"
+author: "Abisai Lujan"
+date: "2025-01-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyr)
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+drought_pop_total <- read.csv("drought_pop_total.csv")
+drought_pop_total
+```
+```{r}
+str(drought_pop_total)
+```
+
+Change `ValidStart` and `ValidEnd` dates into numerical form
+```{r}
+drought_pop_total$ValidStart = as.numeric(gsub("-","",drought_pop_total$ValidStart))
+str(drought_pop_total$ValidStart)
+```
+```{r}
+drought_pop_total$ValidEnd = as.numeric(gsub("-","",drought_pop_total$ValidEnd))
+str(drought_pop_total$ValidEnd)
+```
+
+
+```{r}
+num_str <- "468,985.84"
+num_str=as.numeric(gsub(",","", num_str))
+```
+
+Change `None` to numeric
+```{r}
+drought_pop_total$None = as.numeric(gsub(",","",drought_pop_total$None))
+str(drought_pop_total$None)
+```
+Change `D0` to numeric
+```{r}
+drought_pop_total$D0 = as.numeric(gsub(",","",drought_pop_total$D0))
+str(drought_pop_total$D0)
+```
+Change `D1` to `D4` to numeric
+```{r}
+drought_pop_total$D1 = as.numeric(gsub(",","",drought_pop_total$D1))
+drought_pop_total$D2 = as.numeric(gsub(",","",drought_pop_total$D2))
+drought_pop_total$D3 = as.numeric(gsub(",","",drought_pop_total$D3))
+drought_pop_total$D4 = as.numeric(gsub(",","",drought_pop_total$D4))
+str(drought_pop_total)
+```
+Correlation plot 
+```{r}
+#or(drought_pop_total$None,drought_pop_total$D0,drought_pop_total$D1,drought_pop_total$D2, drought_pop_total$D3, drought_pop_total$D4)
+```
+```{r}
+
+```
+
+Check for any NA values
+```{r}
+colSums(is.na(drought_pop_total))
+```
+States
+```{r}
+unique(drought_pop_total$StateAbbreviation)
+```
+
+```{r}
+length(unique(drought_pop_total$StateAbbreviation))
+```
+
+```{r}
+drought_pop_total$MapDate <- as.Date(as.character(drought_pop_total$MapDate), format="%Y%m%d")
+```
+
+```{r}
+ggplot(drought_pop_total, aes(x=MapDate)) +
+  geom_line(aes(y=D0, color="D0")) +
+  geom_line(aes(y=D1, color="D1")) +
+  geom_line(aes(y=D2, color="D2")) +
+  geom_line(aes(y=D3, color="D3")) +
+  geom_line(aes(y=D4, color="D4")) +
+  labs(title="Drought Categories Over Time",
+       x="Date",
+       y = "Area") + 
+  scale_color_manual(values = c("red", "blue", "green", "purple", "orange")) +
+  theme_minimal()
+  
+```
+
+Drought Category distributions 
+```{r}
+drought_categories <- c("None", "D0", "D1", "D2", "D3", "D4")
+for (category in drought_categories) {
+  print(
+    ggplot(drought_pop_total, aes_string(x = category)) +
+      geom_histogram(binwidth = 1000000, fill = "blue", alpha = 0.7) +
+      labs(title = paste("Distribution of", category),
+           x = "Area",
+           y = "Frequency") +
+      theme_minimal()
+  )
+}
+```
+
+Group by state and summarize the drought conditions for each
+```{r}
+state_summary <- drought_pop_total %>%
+  group_by(StateAbbreviation) %>%
+  summarise(across(all_of(drought_categories), sum, na.rm = TRUE))
+
+cat("\nState-Level Summary:\n")
+(state_summary)
+```
+Heat map for drought scales by state
+```{r}
+state_summary_long <- state_summary %>%
+  pivot_longer(cols = all_of(drought_categories), names_to = "Category", values_to = "Area")
+
+ggplot(state_summary_long, aes(x = Category, y = StateAbbreviation, fill = Area)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Drought Categories by State (Sum)",
+       x = "Drought Category",
+       y = "State") +
+  theme_minimal()
+```
+```{r}
+
+```
+
+
+
+
+
+California NV, UT, NM, AZ
+
+
+
+
+
+
+
+
+
+
