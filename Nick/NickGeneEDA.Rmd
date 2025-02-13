@@ -16,13 +16,18 @@ head(gemeta)
 dim(gexp)
 ```
 ```{r}
-#transposes gene expression df to prepare for join
-gexp = as.data.frame(t(gexp))
-head(gexp)
+library(tibble)
 ```
 
 ```{r}
-fulldf = merge(gexp, gemeta, by.x = "X", by.y = "mRNA" )
-merg
+#transposes gene expression df to prepare for join
+gexp = as.data.frame(t(gexp))
+gexp <- rownames_to_column(gexp, var = "ID")
+head(gexp)
+
+```
+
+```{r}
+fulldf = merge(gexp, gemeta)
 ```
 
