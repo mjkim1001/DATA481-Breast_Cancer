@@ -1,0 +1,182 @@
+---
+title: "03_Killer_Graph"
+author: "Samuel Carlton"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+drought_pct <- read.csv("~/Downloads/drought_area_pct.csv")
+head(drought_pct)
+```
+
+```{r}
+# Filter for the states of interest
+states_of_interest <- c("CA", "NV", "UT", "AZ", "NM")
+filtered_data <- drought_pct %>%
+  filter(StateAbbreviation %in% states_of_interest & D4 >= 10)
+
+# Convert the ValidStart column to date format
+filtered_data$ValidStart <- as.Date(filtered_data$ValidStart)
+
+# Plot the data
+ggplot(filtered_data, aes(x = ValidStart, y = StateAbbreviation)) +
+  geom_point(color = "black", size = 1) +
+  labs(
+    title = "Occurrences of D4 Drought Level >= 10%",
+    x = "Time",
+    y = "State"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_line(color = "gray", linetype = "dashed"),
+    panel.grid.minor = element_blank()
+  )
+```
+#https://www.google.com/url?sa=i&url=https%3A%2F%2Fru.pinterest.com%2Fpin%2F353954851945164637%2F&psig=AOvVaw3Y4FZXSRoj16HWOCgyx_SY&ust=1738716262145000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCIihg4XlqIsDFQAAAAAdAAAAABAS
+```{r}
+# Create a region mapping based on the provided map
+region_map <- data.frame(
+  StateAbbreviation = c("WA", "OR", "CA", 
+                        "MT", "ID", "WY", "NV", "UT", "CO",
+                        "AZ", "NM", "OK", "TX",
+                        "ND", "SD", "NE", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "OH", "MI",
+                        "AR", "LA", "MS", "TN", "KY", "AL", "GA", "SC", "NC", "FL", "VA", "WV",
+                        "ME", "NH", "VT", "MA", "RI", "CT", "NY", "PA", "NJ", "DE", "MD",
+                        "AK", "HI"),
+  Region = c(rep("Pacific", 3),
+             rep("Rocky Mountains", 6),
+             rep("Southwest", 4),
+             rep("Midwest", 12),
+             rep("Southeast", 12),
+             rep("Northeast", 11),
+             rep("Noncontiguous", 2))
+)
+
+# Merge region information with drought data
+drought_with_region <- merge(drought_pct, region_map, by = "StateAbbreviation")
+
+# Filter for D4 drought level >= 10%
+filtered_data <- drought_with_region %>%
+  filter(D4 >= 1)
+
+# Convert the ValidStart column to date format
+filtered_data$ValidStart <- as.Date(filtered_data$ValidStart)
+
+# Plot the data with regions on the y-axis
+ggplot(filtered_data, aes(x = ValidStart, y = Region)) +
+  geom_point(color = "black", size = 1) +
+  labs(
+    title = "Instances of D4 Drought by Region",
+    x = "Time",
+    y = "Region"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_line(color = "gray", linetype = "dashed"),
+    panel.grid.minor = element_blank()
+  )
+
+```
+```{r}
+# Create a region mapping based on the provided map
+region_map <- data.frame(
+  StateAbbreviation = c("WA", "OR", "CA", 
+                        "MT", "ID", "WY", "NV", "UT", "CO",
+                        "AZ", "NM", "OK", "TX",
+                        "ND", "SD", "NE", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "OH", "MI",
+                        "AR", "LA", "MS", "TN", "KY", "AL", "GA", "SC", "NC", "FL", "VA", "WV",
+                        "ME", "NH", "VT", "MA", "RI", "CT", "NY", "PA", "NJ", "DE", "MD",
+                        "AK", "HI"),
+  Region = c(rep("Pacific", 3),
+             rep("Rocky Mountains", 6),
+             rep("Southwest", 4),
+             rep("Midwest", 12),
+             rep("Southeast", 12),
+             rep("Northeast", 11),
+             rep("Noncontiguous", 2))
+)
+
+# Merge region information with drought data
+drought_with_region <- merge(drought_pct, region_map, by = "StateAbbreviation")
+
+# Filter for D4 drought level >= 10%
+filtered_data <- drought_with_region %>%
+  filter(D4 >= 20)
+
+# Convert the ValidStart column to date format
+filtered_data$ValidStart <- as.Date(filtered_data$ValidStart)
+
+# Plot the data with regions on the y-axis
+ggplot(filtered_data, aes(x = ValidStart, y = Region)) +
+  geom_point(color = "black", size = 1) +
+  labs(
+    title = "Occurrences of D4 Drought Level >= 20% by Region",
+    x = "Time",
+    y = "Region"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major = element_line(color = "gray", linetype = "dashed"),
+    panel.grid.minor = element_blank()
+  )
+
+```
+```{r}
+# Filter for D4 drought level > 10%
+filtered_data <- drought_pct %>%
+  filter(D4 > 10)
+
+# Count the number of instances per state
+drought_counts <- filtered_data %>%
+  group_by(StateAbbreviation) %>%
+  summarise(Instances = n()) %>%
+  arrange(desc(Instances))
+
+# Display the top 10 states
+top_10_states <- head(drought_counts, 10)
+print(top_10_states)
+```
+
+```{r}
+# Create a region mapping based on the provided map
+region_map <- data.frame(
+  StateAbbreviation = c("WA", "OR", "CA", 
+                        "MT", "ID", "WY", "NV", "UT", "CO",
+                        "AZ", "NM", "OK", "TX",
+                        "ND", "SD", "NE", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "OH", "MI",
+                        "AR", "LA", "MS", "TN", "KY", "AL", "GA", "SC", "NC", "FL", "VA", "WV",
+                        "ME", "NH", "VT", "MA", "RI", "CT", "NY", "PA", "NJ", "DE", "MD",
+                        "AK", "HI"),
+  Region = c(rep("Pacific", 3),
+             rep("Rocky Mountains", 6),
+             rep("Southwest", 4),
+             rep("Midwest", 12),
+             rep("Southeast", 12),
+             rep("Northeast", 11),
+             rep("Noncontiguous", 2))
+)
+
+# Merge region information with drought data
+drought_with_region <- merge(drought_pct, region_map, by = "StateAbbreviation")
+
+# Filter for D4 drought level > 10%
+filtered_data <- drought_with_region %>%
+  filter(D4 > 10)
+
+# Count the number of instances per region
+region_counts <- filtered_data %>%
+  group_by(Region) %>%
+  summarise(Instances = n()) %>%
+  arrange(desc(Instances))
+
+# Display the region drought counts
+print(region_counts)
+
+```
+
