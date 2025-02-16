@@ -1,0 +1,207 @@
+---
+title: "Gene_Expression_EDA"
+author: "Abisai Lujan"
+date: "2025-02-11"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+**Gene Expression data description:**
+Measurements of the quantity of RNA (aka gene expression) for all genes in the human genome.
+Columns are breast cancer samples. Rows are Ensembl gene IDs.
+
+Load in Gene Expression data
+```{r}
+gene_exp <- read.csv("gene_expression.csv")
+head(gene_exp)
+```
+
+Data dimension
+```{r}
+dim(gene_exp)
+```
+There are 60616 observations for the 784 breast cancer samples
+
+
+
+
+
+**Gene mapping data description**
+Maps ensembl gene ids (rows) to gene symbols (i.e. common name) and to the type of gene
+```{r}
+gene_map <- read.csv("gene_mappings.csv")
+head(gene_map)
+```
+
+```{r}
+length(unique(gene_map$GENETYPE))
+unique(gene_map$GENETYPE)
+```
+In the gene map, there are 40 unique gene types such as protein coding, lcnRNA, transcribed unitary pseudogene, etc.
+
+
+
+
+
+
+
+```{r}
+ge <- gene_exp %>% 
+  filter(X == "ENSG00000082929")
+ge
+```
+So for ensemblid ENSG00000082929, the first observation TCGA.B6 has no mRNA count, the second observation TCGA.BH has 1 mRNA count, the third TCGA.BH has 26 mRNA count
+
+
+
+```{r}
+boxplot(ge[,2:6], range = 5.5)
+```
+
+
+
+
+
+
+
+
+**Metadata description**
+
+Metadata associated with samples (columns) from the gene expression matrix. 
+*mRNA* - sample ID 
+*PAM50* - Genetic Subtype 
+*TumorPurity* - Lower values correspond to higher non-tumor contamination 
+*ProliferationScore* - Gene based score assessing aggressiveness of tumor 
+*ER* - Clinical assessment of estrogen receptor status 
+*PR* - Clinical assessment of progesterone receptor status 
+*HER2* - Clinical assessment of human epidermal growth factor receptor status
+
+
+```{r}
+metadata <- read.csv("metadata.csv")
+head(metadata)
+```
+
+```{r}
+unique(metadata$PAM50)
+```
+Her2 is the same as HER2 so I will standardize spelling to HER2 for consistency. But first examine the rows where 
+```{r}
+
+```
+
+
+
+
+```{r}
+metadata[metadata$PAM50 == "Her2",]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Gene Expression, each column is a person 
+
+```{r}
+ge_p1 <- gene_exp[,1:2]
+ge_p1
+```
+
+```{r}
+boxplot(log10(ge_p1$TCGA.B6.A0IG.01A.11R.A034.07))
+```
+
+```{r}
+boxplot(ge_p1$TCGA.B6.A0IG.01A.11R.A034.07)
+```
+```{r}
+library(tidyr)
+library(ggplot2)
+```
+
+
+
+```{r}
+ge_p1
+```
+
+
+```{r}
+gep1_bxp <- ggplot(ge_p1, x="X", y= "TCGA.B6.A0IG.01A.11R.A034.07") + 
+  geom_boxplot()
+```
+
+
+```{r}
+ge_p1_reduced <- 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

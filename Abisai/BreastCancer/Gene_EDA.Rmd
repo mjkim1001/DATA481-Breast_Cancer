@@ -1,0 +1,318 @@
+---
+title: "EDA for Gene data"
+output: 
+  pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(forcats)
+```
+
+
+
+## 1. Read data - Gene mapping
+
+#### Overview of Gene Mapping Data
+
+This dataset maps Ensembl gene IDs to common gene names and gene types.
+
+
+```{r}
+gene_map = read.csv("../RData/BreastCancer_data/gene_mappings.csv")
+head(gene_map)
+```
+
+
+#### Q1: Are there any missing values?
+
+```{r}
+sum(is.na(gene_map))
+```
+**Answer:** No missing values found.
+
+
+\newpage
+
+#### Distribution of Gene Types
+
+
+* **Question** : Which genetypes are important?
+
+
+```{r}
+gene_map %>% 
+  count(GENETYPE, name = "Count") %>%  # Compute count per GENETYPE
+  mutate(GENETYPE = fct_reorder(GENETYPE, Count)) %>%
+  ggplot(aes(x=GENETYPE, y = Count)) +
+  geom_bar(stat = "identity") +
+  scale_y_log10()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+
+\newpage
+
+## 2. Read data - Gene expression
+
+This dataset contains RNA expression levels for genes across multiple breast cancer samples:
+Measurements of the quantity of RNA (aka gene expression) for all genes in the human genome.
+Columns are breast cancer samples. Rows are Ensemble gene IDs.
+
+```{r}
+gene_exp = read.csv("../RData/BreastCancer_data/gene_expression.csv")
+gene_exp = as_tibble(gene_exp)
+(gene_exp)
+(dim(gene_exp))
+```
+
+
+* **Total Genes:** 60,616  
+* **Total Samples:** 784
+
+
+#### Q1: Are there missing values?
+
+```{r}
+sum(is.na(gene_exp))
+```
+ No missing values found.
+ 
+
+#### Question: How can we eliminate the genes? What would be potential criteria?
+
+#### Q2: How many genes have **zero** total expressions? 
+```{r}
+gene_exp = gene_exp %>%
+  mutate(sum_count = rowSums(across(-X)))
+nrow(gene_exp %>% filter(sum_count == 0))  
+```
+**Answer:** **2660**
+
+
+ \newpage
+
+#### Q3: Distribution of total gene expressions 
+
+ * cutoff by some threshold? number of zero expressions?
+
+```{r}
+gene_exp %>%
+  mutate(sum_count = rowSums(across(-X))) %>%
+  ggplot(aes(x = log10(sum_count))) +
+  geom_histogram(aes(y = ..density..), fill = "steelblue", alpha = 0.7) +
+  labs(x = "log10 of sum of gene expressions", y = "Density") 
+```
+\newpage
+
+* There are certain gene expressions that are way too large; how should we treat them?
+
+```{r}
+# boxplot of gene expression values with one fixed sample
+gene_exp %>%
+  #pivot_longer(-X, names_to = "Sample", values_to = "Expression") %>%
+  ggplot() +
+  geom_boxplot(aes(x=TCGA.B6.A0IG.01A.11R.A034.07)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+\newpage
+
+## 3. Read data - Metadata
+
+[data766_breast_cancer_metadata.csv]
+
+Metadata associated with samples (columns) from the gene expression matrix.
+
+* mRNA 			- sample ID
+
+* PAM50 			- Genetic Subtype
+
+* TumorPurity 		- Lower values correspond to higher non-tumor contamination
+
+* ProliferationScore 	- Gene based score assessing aggressiveness of tumor
+
+* ER 			- Clinical assessment of estrogen receptor status
+
+* PR 			- Clinical assessment of progesterone receptor status
+
+* HER2 			- Clinical assessment of human epidermal growth factor receptor status
+
+
+```{r}
+metadata = read.csv("../RData/BreastCancer_data/metadata.csv")
+head(metadata)
+```
+
+
+\newpage 
+
+#### Q1: Is there a missing value in this dataset? 
+
+**Answer: Yes**
+
+```{r}
+as_tibble(is.na(metadata)) %>%
+  select(-mRNA) %>%
+  mutate(row = row_number()) %>%
+  pivot_longer(-row, names_to = "Variable", values_to = "Missing") %>%
+  mutate(Variable = factor(Variable, levels= c("ER", "PR", "TumorPurity", "ProliferationScore", "HER2", "PAM50"))) %>%
+  #filter(Missing) %>%
+  ggplot(aes(x = Variable, y = row, alpha = Missing, fill=Missing)) +
+  geom_tile() +
+  scale_fill_manual(values = c("TRUE" = "red", "FALSE" = "black")) +
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0)) +
+  labs(title = "Missing Data Heatmap", x = "Columns", y = "Rows") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+\newpage
+
+
+#### Q2: Which category is relevant?
+
+**color_by PAM50**
+
+```{r}
+metadata %>% 
+  pivot_longer(c("TumorPurity","ProliferationScore"), values_to = "value", names_to = "Variable") %>%
+  ggplot(aes(fill = PAM50))+
+  geom_histogram(aes(x=value)) + 
+  facet_grid(rows = vars(Variable), scales = "free_x") 
+```
+
+
+\newpage
+
+#### Q2: Which category is relevant?
+
+**color_by HER2**
+
+```{r}
+metadata %>% 
+  pivot_longer(c("TumorPurity","ProliferationScore"), values_to = "value", names_to = "Variable") %>%
+  ggplot(aes(fill = HER2))+
+  geom_histogram(aes(x=value)) + 
+  facet_grid(rows = vars(Variable), scales = "free_x") 
+```
+
+
+\newpage
+
+#### Q2: Which category is relevant?
+
+**color_by ER**
+
+```{r}
+metadata %>% 
+  pivot_longer(c("TumorPurity","ProliferationScore"), values_to = "value", names_to = "Variable") %>%
+  ggplot(aes(fill = ER))+
+  geom_histogram(aes(x=value)) + 
+  facet_grid(rows = vars(Variable), scales = "free_x") 
+```
+
+\newpage
+
+#### Q2: Which category is relevant?
+
+**color_by PR**
+
+```{r}
+metadata %>% 
+  pivot_longer(c("TumorPurity","ProliferationScore"), values_to = "value", names_to = "Variable") %>%
+  ggplot(aes(fill = PR))+
+  geom_histogram(aes(x=value)) + 
+  facet_grid(rows = vars(Variable), scales = "free_x") 
+
+```
+
+
+
+
+
+
+weighting by tumor purity. but that should be the last thing we get to 
+
+Central dogma: dna, transcribe dna to rna. 
+Protein coding gene: we know that this gene could produce a functional product. Rna does do things on its own 
+Pseudogene: we have no idea what this is 
+LncRna: observed genes but not part of protein-coding. could be nothing/junk, but at least one is responsible for XX chromosomes for females. So LncRna can stop the X from producing 
+
+
+
+
+Tend to just look at protein-coding genes 
+
+
+ENSEMBLID are unique and gene_ are not necessarily unique 
+
+
+
+
+```{r}
+gene_map[gene_map$GENETYPE == "protein-coding",]
+```
+
+```{r}
+uniq_g_symb <- gene_map %>% 
+  filter()
+```
+
+
+Predict those that are missing the ER. Merge ER and PR into 1. 
+
+```{r}
+min(metadata$ProliferationScore)
+```
+```{r}
+max(metadata$ProliferationScore)
+```
+
+
+Proliferation: speed of tumor growth. high score suggests tumor being more aggressive. 
+luminals usually hormone positive so you can blast it with hormone treatment 
+
+
+LuminalA tends to be least aggressive and usually younger people get it 
+
+
+
+
+DESQ2 median of ratios 
+- look 10 times and then look 20 times.
+- properties of sequencing: if a gene is highly expressed (0.9) then there is a skewness to this, even if its equally expressed its gonna take up even more (instead of 2x it'll be 3x)
+- median of ratios of normalization strategy is how to get around this 
+- could also do log to take care of skewness, but median of ratios is more representative of biology 
+
+- samples in the rows. take row sums (total) Prinicple component will be like 100% correlated before normalization. Post normalization that will go away 
+
+1st: median of ratios of matrix which outputs each sample's size factor 
+scaled 
+
+
+
+
+
+estimate size factors
+or estimate size factors for matrix 
+
+
+
+
+
+batch effects 
+
+
+
+
+
+after doing PCA (you'll see big blobs) start overlaying meta data ( color by PAM50, Hormone, Proliferation) .
+PCA: doing lin comb of genes to see variance 
+
+
+
+
+
+Overlay and overlay where the missing is 
+
