@@ -1,100 +1,426 @@
 ---
-title: "01_make_data_.Rmd"
+title: "DATA 481 02_EDA"
 author: "Abisai Lujan"
-date: "2025-01-14"
-output:
-  pdf_document: default
-  html_document: default
+date: "2025-02-17"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-https://github.com/rfordatascience/tidytuesday/blob/main/data/2022/2022-06-14/readme.md 
-
-```{r, include=FALSE}
-library(tidyverse)
+library(tidyr)
+library(dplyr)
 library(ggplot2)
 ```
+**Read the data**
+
+Data sourced from Github repository rfordatascience/tidytuesday
+\newline
+(https://github.com/rfordatascience/tidytuesday/blob/main/data/2021/2021-07-20/readme.md)
+\newline
 
 
+`Data Reference:`
+\newline
+"The U.S. Drought Monitor is jointly produced by the National Drought Mitigation Center at the University of Nebraska-Lincoln, the United States Department of Agriculture, and the National Oceanic and Atmospheric Administration. Map courtesy of NDMC."
+
+This data contains weekly recorded (mapped) drought levels, from 2001 to 2021, across the 50 U.S. states, U.S. Capital (DC), and Puerto Rico (PR).
+
+Included in these records are categorical levels of drought, as well as statistics of the land and populations affected within each drought category.
+\newline
+
+**Schema**
+
+`map_date`: Date map released
+
+`state_abb`: State abbreviation 
+
+`valid_start`: Start date of weekly data
+
+`valid_end`: End date of weekly data
+
+`stat_fmt`: Statistic format (2 for "categorical", 1 for "cumulative"")
+
+`drought_lvl`: Drought level (None, DO, D1, D2, D3, D4) which corresponds to no drought, abnormally dry, moderate drought, severe drought, extreme drought or exceptional drought.
+
+`area_pct`: Percent of state currently in that drought category
+
+`area_total`: Total land area (sq miles) of state currently in that drought category
+
+`pop_pct`: Population percent of total state population in that drought category
+
+`pop_total`: Population total of that state in that drought category
+
+\newpage
+Preview of dataset
 ```{r}
-drought <- read.csv("./RData/drought.csv")
+drought <- read.csv("../RData/Drought_data/drought.csv")
 head(drought)
 ```
 
 
-# 1. Identify response variables
-
-My choice: area_pct	(double) Percent of state currently in that drought category
-
-* Examine distributions
-
-First things first! How many zeros are there?
-
+Dimensions of dataset 
 ```{r}
-sum(drought$area_pct == 0.0)
-sum(drought$area_pct == 0.0)/nrow(drought)
+#size of data frame:
+cat("The drought dataset has:", dim(drought)[1], "rows and", dim(drought)[2], "columns")
 ```
 
-55\% of the data have zeros.
-
-Distribution of non-zero values
-
+Check for any missing values
 ```{r}
-drought %>%
-  filter(area_pct > 0) %>%
-  ggplot() +
-  geom_histogram(aes(x=log10(area_pct)))
+sum(is.na(drought))
 ```
+There are no missing values within the dataset
 
-
+\newpage
+**Clean the Data**
+\newline
+First, observe the types and names of the variables 
 ```{r}
-drought %>%
-  mutate(map_date = as.Date(as.character(map_date), format = "%Y%m%d")) %>%
-  ggplot()+
-  geom_tile(aes(x=map_date, y=state_abb, fill=log10(area_pct))) 
+str(drought)
+```
+Generally, it is good practice to change date variables such as `map_date`, `valid_start` and `valid_end` dates to numeric types
+```{r, message=FALSE}
+drought$map_date <- as.numeric(gsub("-", "", drought$map_date))
+drought$valid_start <- as.numeric(gsub("-", "", drought$valid_start))
+drought$valid_end <- as.numeric(gsub("-","", drought$valid_end))
 ```
 
 
-# 2. Identify explanatory variables
-
-* Make histograms or bar graphs
-
-* Look for imbalance
-
-
+```{r, echo=FALSE}
+str(drought$map_date)
+str(drought$valid_start)
+str(drought$valid_end)
+```
 
 
+*--- Remove redundant columns ---*
+
+Out of curiosity, I'd like to investigate `stat_fmt` since `drought_lvl`
+```{r}
+cat("Unique values in stat_fmt: ",unique(drought$stat_fmt))
+```
+The only unique value within `stat_fmt` is 2, let's observe how many rows hold values of 2 and 1
+```{r}
+nrows_sf1 <- nrow(drought[drought$stat_fmt == 1,])
+nrows_sf2 <- nrow(drought[drought$stat_fmt == 2,])
+cat("Number of rows where stat_fmt = 1:", nrows_sf1, 
+    "; Number of rows where stat_fmt = 2:",nrows_sf2,"\n")
+```
+
+
+```{r,echo=FALSE}
+cat("Number of rows in drought.csv: ", nrow(drought))
+```
+As the `stat_fmt` column does not provide any useful information I will remove it from the dataset.
+```{r}
+drought <- drought %>% 
+  select(-c("stat_fmt"))
+names(drought)
+```
+
+
+\newpage
+
+
+*--- Reorganize dataset ---*
+
+Reorder `map_date` in ascending value for each state; just my personal preference
+
+```{r}
+drought_ordered <- drought[order(drought$state_abb, drought$valid_start),]
+head(drought_ordered)
+```
+We may observe that there is a lot of redundancy in rows per date. As each state has 6 rows for the single week. The 6 separate rows are the statistics for each drought category. 
+
+*-- Split the Data ---*
+
+To prepare for smoother data visualization, I will split the organized dataset for different purposes. The goal is to have separate datasets for Area Percentage, Area Total, Population Percentage, and Population Total. 
+
+Each new dataset will each have a more organized view of each respective quantity; 
+
+That is the Area Percentage dataset will have columns for each drought level, which will hold their respective `area_pct` statistics. 
+The Area Total dataset will also have columns for each drought level, which will hold their respective `area_total` statistics, and so forth. 
+
+This way, it will be easier to reference the different data sets for different visualizations. We may visualize trends among drought levels for separate statistics.  
+
+To prepare, I will first split the organized dataset by drought level
+
+\newpage
+Drought level None. Rename variable names to avoid confusion when joining later.
+```{r}
+drought_none <- drought_ordered %>%
+  filter(drought_lvl=="None") %>% 
+  rename(None = drought_lvl, 
+         None.area_pct = area_pct, 
+         None.area_total = area_total,
+         None.pop_pct = pop_pct, 
+         None.pop_total = pop_total)
+
+head(drought_none)
+```
+
+
+Drought level D0. Rename variable names to avoid confusion when joining later.
+
+```{r}
+drought_D0 <- drought_ordered %>% 
+  filter(drought_lvl == "D0") %>%
+  rename(D0 = drought_lvl, 
+         D0.area_pct = area_pct, 
+         D0.area_total = area_total,
+         D0.pop_pct = pop_pct, 
+         D0.pop_total = pop_total)
+head(drought_D0)
+```
+
+Drought level D1. Rename variable names to avoid confusion when joining later.
+```{r}
+drought_D1 <- drought_ordered %>%
+  filter(drought_lvl == "D1") %>%
+    rename(D1 = drought_lvl, 
+         D1.area_pct = area_pct, 
+         D1.area_total = area_total,
+         D1.pop_pct = pop_pct, 
+         D1.pop_total = pop_total)
+head(drought_D1)
+```
+
+Drought level D2. Rename variable names to avoid confusion when joining later.
+
+```{r}
+drought_D2 <- drought_ordered %>%
+  filter(drought_lvl == "D2") %>% 
+    rename(D2 = drought_lvl, 
+         D2.area_pct = area_pct, 
+         D2.area_total = area_total,
+         D2.pop_pct = pop_pct, 
+         D2.pop_total = pop_total)
+head(drought_D2)
+```
+\newpage
+Drought level D3. Rename variable names to avoid confusion when joining later.
+```{r}
+drought_D3 <- drought_ordered %>%
+  filter(drought_lvl == "D3") %>%
+    rename(D3 = drought_lvl, 
+         D3.area_pct = area_pct, 
+         D3.area_total = area_total,
+         D3.pop_pct = pop_pct, 
+         D3.pop_total = pop_total)
+head(drought_D3)
+```
+Drought level D4. Rename variable names to avoid confusion when joining later.
+```{r}
+drought_D4 <- drought_ordered %>%
+  filter(drought_lvl == "D4") %>% 
+    rename(D4 = drought_lvl, 
+         D4.area_pct = area_pct, 
+         D4.area_total = area_total,
+         D4.pop_pct = pop_pct, 
+         D4.pop_total = pop_total)
+head(drought_D4)
+```
+
+\newpage
+*--- Create the new split datasets ---*
+\newline
+
+To avoid repeatedly creating new empty datasets, I will create an empty dataframe that will act as a base for easy data insertion. 
+```{r}
+#dimensions
+numcols <- ncol(drought_none) + 1
+numrows <- nrow(drought_none)
+
+#create a matrix with placeholder columns and convert to a data frame
+empty_template <- data.frame(
+  matrix(ncol = numcols, 
+         nrow = numrows))
+```
+
+
+The only difference between the new datasets will be their respective statistic values for each drought level. Therefore I will go ahead and rename the *constant* placeholder columns.
+```{r}
+template_cnames <- c("map_date", "state_abb", "valid_start", "valid_end", 
+                                "None", "D0", "D1", "D2", "D3", "D4")
+colnames(empty_template) <- template_cnames
+```
+
+
+`drought_area_pct`: new dataset which will hold `area_pct` statistics from the separate drought level datasets. 
+```{r}
+drought_area_pct <- empty_template %>% 
+  #insert correct data
+  mutate(
+  map_date = drought_none$map_date, 
+  state_abb = drought_none$state_abb,
+  valid_start = drought_none$valid_start,
+  valid_end = drought_none$valid_end, 
+  None = drought_none$None.area_pct,
+  D0 = drought_D0$D0.area_pct,
+  D1 = drought_D1$D1.area_pct,
+  D2 = drought_D2$D2.area_pct,
+  D3 = drought_D3$D3.area_pct,
+  D4 = drought_D4$D4.area_pct
+  )
+
+head(drought_area_pct)
+```
+\newpage
+`drought_area_total`: new dataset which will hold `area_total` statistics from the separate drought level datasets. 
+
+```{r}
+drought_area_total <- empty_template %>% 
+  #insert correct data
+  mutate(
+  map_date = drought_D0$map_date, 
+  state_abb = drought_D0$state_abb,
+  valid_start = drought_D0$valid_start,
+  valid_end = drought_D0$valid_end, 
+  None = drought_none$None.area_total,
+  D0 = drought_D0$D0.area_total,
+  D1 = drought_D1$D1.area_total,
+  D2 = drought_D2$D2.area_total,
+  D3 = drought_D3$D3.area_total,
+  D4 = drought_D4$D4.area_total
+  )
+
+head(drought_area_total)
+```
+
+`drought_pop_pct`: new dataset which will hold `pop_pct` statistics from the separate drought level datasets. 
+```{r}
+drought_pop_pct <- empty_template %>% 
+  #insert correct data
+  mutate(
+  map_date = drought_D1$map_date, 
+  state_abb = drought_D1$state_abb,
+  valid_start = drought_D1$valid_start,
+  valid_end = drought_D1$valid_end, 
+  None = drought_none$None.pop_pct,
+  D0 = drought_D0$D0.pop_pct,
+  D1 = drought_D1$D1.pop_pct,
+  D2 = drought_D2$D2.pop_pct,
+  D3 = drought_D3$D3.pop_pct,
+  D4 = drought_D4$D4.pop_pct
+  )
+
+head(drought_pop_pct)
+```
+\newpage
+`drought_pop_total`: new dataset which will hold `pop_total` statistics from the separate drought level datasets. 
+
+```{r}
+drought_pop_total <- empty_template %>% 
+  #insert correct data
+  mutate(
+  map_date = drought_D2$map_date, 
+  state_abb = drought_D2$state_abb,
+  valid_start = drought_D2$valid_start,
+  valid_end = drought_D2$valid_end, 
+  None = drought_none$None.pop_pct,
+  D0 = drought_D0$D0.pop_total,
+  D1 = drought_D1$D1.pop_total,
+  D2 = drought_D2$D2.pop_total,
+  D3 = drought_D3$D3.pop_total,
+  D4 = drought_D4$D4.pop_total
+  )
+
+head(drought_pop_total)
+```
+
+\newpage
+**Exploratory Data Analysis**
+
+Visualization: heatmap for drought scales summed by state from `drought_pop_total`
+
+```{r}
+drought_categories <- c("D0", "D1", "D2", "D3", "D4")
+
+state_summary_pt <- drought_pop_total %>%
+group_by(state_abb) %>% summarise(across(all_of(drought_categories), sum, na.rm = TRUE))
+
+state_summary_pt[1:10,]
+```
+```{r}
+state_summary_long_pt <- state_summary_pt %>%
+pivot_longer(cols = all_of(drought_categories), names_to = "Category", values_to = "Pop")
+
+ggplot(state_summary_long_pt, aes(x = Category, y = state_abb, fill = Pop)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Drought Categories by State (Sum)",
+       x = "Drought Category",
+       y = "State") + 
+  theme_minimal()
+```
+
+As the heat map shows, it is not very surprising that the populations of California and Texas have been reported to be highly affected by drought. California is highly populated. Both California and Texas are among hot, dry weather conditions that often receive droughts. 
+
+Visualization: reported state population affected by each drought category over time
+```{r}
+drought_pop_total$map_date <- as.Date(as.character(drought_pop_total$map_date), format="%Y%m%d")
+```
+```{r}
+ggplot(drought_pop_total, aes(x=map_date)) + 
+  geom_line(aes(y=D0, color="D0")) +
+  geom_line(aes(y=D1, color="D1")) +
+  geom_line(aes(y=D2, color="D2")) + 
+  geom_line(aes(y=D3, color="D3")) +
+  geom_line(aes(y=D4, color="D4")) +
+  labs(title="Drought Categories Effect on Population Over Time",
+       x="Date",
+       y = "Area") +
+scale_color_manual(values = c("red", "blue", "green", "purple", "orange")) + theme_minimal()
+```
+
+
+From `drought_area_total` let's observe a State-level summary of how much total land area has been affected by each drought category
+
+```{r}
+drought_categories <- c("D0", "D1", "D2", "D3", "D4")
+state_summary_at <- drought_area_total %>%
+  group_by(state_abb) %>% 
+  summarise(across(all_of(drought_categories), sum, na.rm = TRUE))
+state_summary_at[1:10,]
+```
 
 
 
+Visualization: heatmap for total land area by state affected by each drought category, from `drought_area_total`
+```{r}
+state_summary_long_at <- state_summary_at %>%
+pivot_longer(cols = all_of(drought_categories), names_to = "Category", values_to = "Area")
+
+ggplot(state_summary_long_at, aes(x = Category, y = state_abb, fill = Area)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Drought Categories by State (Sum)",
+       x = "Drought Category",
+       y = "State") + 
+  theme_minimal()
+```
+As we can see, Arkansas' total land area mostly experiences drought at the milder D0 category. States such Texas, Nevada, New Mexico, Colorado, California, and Arizona have a fairly even, extensive spread of land that has been affected up to drought levels of D3. Some even reach D4. This may be likely a sign of a steady increase in climate change and its effects increase yearly. 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```{r}
+drought_area_total$map_date <- as.Date(as.character(drought_area_total$map_date), format="%Y%m%d")
+```
+```{r}
+ggplot(drought_area_total, aes(x=map_date)) + 
+  geom_line(aes(y=D0, color="D0")) +
+  geom_line(aes(y=D1, color="D1")) +
+  geom_line(aes(y=D2, color="D2")) + 
+  geom_line(aes(y=D3, color="D3")) +
+  geom_line(aes(y=D4, color="D4")) +
+  labs(title="Total Land Area affected by Drought Categories over time",
+       x="Date",
+       y = "Area") +
+  scale_x_date(limits = c(as.Date("2001-07-10"), 
+                          as.Date("2021-07-30")),
+               date_labels = "%Y") +
+  scale_color_manual(values = c("red", "blue", "green", "purple", "orange")) +
+  theme_minimal()
+```
+We may observe there still steady spikes in D0-level droughts, as well as higher amounts of land affected by D4-level droughts. The D4-level droughts's effects more land over time and have much longer durations prior to ~2011. Among each drought category, there is a notable dip around the late 2010s, which is likely when the effects of icecaps and glaciers melting cooled the weather and alleviated land area affected by drought. Then we see a spike and increase in duration again entering 2021, which may represent the cyclical nature of regular seasonal changes or even that of climate change. 
 
 
 

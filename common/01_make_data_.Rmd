@@ -10,41 +10,61 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-https://github.com/rfordatascience/tidytuesday/blob/main/data/2022/2022-06-14/readme.md 
 
-```{r, eval = FALSE, include=FALSE}
-library("tidyverse")
+
+```{r, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(tidytuesdayR)
 ```
 
+
+Drought data from Github repository on ~ 2 decades worth of weekly recorded drought data across the US and territory Puerto Rico. 
+```{r}
+drought1 <- read.csv("RData/Drought_data/drought.csv")
+head(drought1)
+```
 
 ```{r}
-drought <- read.csv("./RData/drought.csv")
-summary(drought)
+dim(drought1)
+```
+The dataset has 325728 and 10 columns. Information includes drought levels and their effects on different states' land area and population on a weekly basis. 
+
+
+The github repository also split the drought data into different sub data sets for percent of land area affected, total land area affected, percent of population affected, and total population affected. We will manually split the data ourselves, but will load the Github data for reference. 
+
+**Load drought area percent data**
+```{r}
+drought_area_pct <- read.csv("RData/Drought_data/drought_area_pct.csv")
+head(drought_area_pct)
+```
+```{r}
+str(drought_area_pct)
+```
+
+**Load area total data**
+
+```{r}
+drought_area_total <- read.csv("RData/Drought_data/drought_area_total.csv")
+head(drought_area_total)
+```
+
+**Load drought population percent**
+
+```{r}
+drought_pop_pct <- read.csv("RData/Drought_data/drought_pop_pct.csv")
+head(drought_pop_pct)
 ```
 
 
+**Load drought population total data**
+```{r}
+drought_pop_total <- read.csv("RData/Drought_data/drought_pop_total.csv")
+head(drought_pop_total)
+```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Our question of interest is if we can identify trends in how different drought levels affect land area and population over time. Our killer graph could be a time series of drought conditions on area and population; also, the killer graph could break the land down by region and identify geographical trends. 
 
 
 
