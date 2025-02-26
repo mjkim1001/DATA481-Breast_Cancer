@@ -21,7 +21,7 @@ library(tidytuesdayR)
 
 Drought data from Github repository on ~ 2 decades worth of weekly recorded drought data across the US and territory Puerto Rico. 
 ```{r}
-drought1 <- read.csv("../RData/Drought_data/drought.csv")
+drought1 <- read.csv("../../common/RData/Drought_data/drought.csv")
 head(drought1)
 ```
 
@@ -35,7 +35,7 @@ The github repository also split the drought data into different sub data sets f
 
 **Load drought area percent data**
 ```{r}
-drought_area_pct <- read.csv("../RData/Drought_data/drought_area_pct.csv")
+drought_area_pct <- read.csv("../../common/RData/Drought_data/drought_area_pct.csv")
 head(drought_area_pct)
 ```
 ```{r}
@@ -45,21 +45,21 @@ str(drought_area_pct)
 **Load area total data**
 
 ```{r}
-drought_area_total <- read.csv("../RData/Drought_data/drought_area_total.csv")
+drought_area_total <- read.csv("../../common/RData/Drought_data/drought_area_total.csv")
 head(drought_area_total)
 ```
 
 **Load drought population percent**
 
 ```{r}
-drought_pop_pct <- read.csv("../RData/Drought_data/drought_pop_pct.csv")
+drought_pop_pct <- read.csv("../../common/RData/Drought_data/drought_pop_pct.csv")
 head(drought_pop_pct)
 ```
 
 
 **Load drought population total data**
 ```{r}
-drought_pop_total <- read.csv("../RData/Drought_data/drought_pop_total.csv")
+drought_pop_total <- read.csv("../../common/RData/Drought_data/drought_pop_total.csv")
 head(drought_pop_total)
 ```
 

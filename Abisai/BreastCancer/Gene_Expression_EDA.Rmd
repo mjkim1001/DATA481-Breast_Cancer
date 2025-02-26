@@ -19,7 +19,7 @@ Columns are breast cancer samples. Rows are Ensembl gene IDs.
 
 Load in Gene Expression data
 ```{r}
-gene_exp <- read.csv("gene_expression.csv")
+gene_exp <- read.csv("../../common/RData/data766_breast_cancer/gene_expression.csv")
 head(gene_exp)
 ```
 
@@ -36,7 +36,7 @@ There are 60616 observations for the 784 breast cancer samples
 **Gene mapping data description**
 Maps ensembl gene ids (rows) to gene symbols (i.e. common name) and to the type of gene
 ```{r}
-gene_map <- read.csv("gene_mappings.csv")
+gene_map <- read.csv("../../common/RData/data766_breast_cancer/gene_mappings.csv")
 head(gene_map)
 ```
 
@@ -85,7 +85,7 @@ Metadata associated with samples (columns) from the gene expression matrix.
 
 
 ```{r}
-metadata <- read.csv("metadata.csv")
+metadata <- read.csv("../../common/RData/data766_breast_cancer/metadata.csv")
 head(metadata)
 ```
 
@@ -163,7 +163,7 @@ gep1_bxp <- ggplot(ge_p1, x="X", y= "TCGA.B6.A0IG.01A.11R.A034.07") +
 
 
 ```{r}
-ge_p1_reduced <- 
+#ge_p1_reduced <- 
 ```
 
 

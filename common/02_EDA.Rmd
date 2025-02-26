@@ -53,7 +53,7 @@ Included in these records are categorical levels of drought, as well as statisti
 \newpage
 Preview of dataset
 ```{r}
-drought <- read.csv("../RData/Drought_data/drought.csv")
+drought <- read.csv("RData/Drought_data/drought.csv")
 head(drought)
 ```
 
@@ -323,42 +323,91 @@ drought_pop_total <- empty_template %>%
   D3 = drought_D3$D3.pop_total,
   D4 = drought_D4$D4.pop_total
   )
+```
 
+
+```{r}
 head(drought_pop_total)
 ```
 
 \newpage
 **Exploratory Data Analysis**
 
-Visualization: heatmap for drought scales summed by state from `drought_pop_total`
+Lets see how the total state populations have been affected by drought
 
+Visualization: Heat map for total populations affected by drought, summed by state from `drought_pop_total`
 ```{r}
 drought_categories <- c("D0", "D1", "D2", "D3", "D4")
-
-state_summary_pt <- drought_pop_total %>%
-group_by(state_abb) %>% summarise(across(all_of(drought_categories), sum, na.rm = TRUE))
-
-state_summary_pt[1:10,]
 ```
-```{r}
-state_summary_long_pt <- state_summary_pt %>%
-pivot_longer(cols = all_of(drought_categories), names_to = "Category", values_to = "Pop")
 
-ggplot(state_summary_long_pt, aes(x = Category, y = state_abb, fill = Pop)) + 
+
+```{r, warning=FALSE}
+state_summary_pt_sum <- drought_pop_total %>%
+  group_by(state_abb) %>% 
+  summarise(across(all_of(drought_categories), 
+                   sum, na.rm = TRUE))
+```
+
+
+```{r, include=FALSE}
+head(state_summary_pt_sum)
+```
+
+
+```{r}
+state_summary_long_pt_sum <- state_summary_pt_sum %>%
+  pivot_longer(cols = all_of(drought_categories), 
+               names_to = "Category", values_to = "Pop")
+```
+
+
+```{r}
+ggplot(state_summary_long_pt_sum, aes(x = Category, y = state_abb, fill = Pop)) + 
   geom_tile() +
   scale_fill_gradient(low = "white", high = "red") +
-  labs(title = "Drought Categories by State (Sum)",
-       x = "Drought Category",
+  labs(title = "Total State Populations affected by Drought Severity Levels",
+       x = "Severity Levels",
        y = "State") + 
   theme_minimal()
 ```
-
 As the heat map shows, it is not very surprising that the populations of California and Texas have been reported to be highly affected by drought. California is highly populated. Both California and Texas are among hot, dry weather conditions that often receive droughts. 
 
-Visualization: reported state population affected by each drought category over time
+\newpage
+Visualization: heatmap for average drought scales summed by state from `drought_pop_total`
+
+```{r}
+state_summary_pt_avg <- drought_pop_total %>%
+  group_by(state_abb) %>% 
+  summarise(across(all_of(drought_categories), 
+                   mean, na.rm = TRUE))
+```
+
+
+```{r, include=FALSE}
+head(state_summary_pt_avg)
+```
+
+```{r}
+state_summary_long_pt_avg <- state_summary_pt_avg %>%
+  pivot_longer(cols = all_of(drought_categories), 
+               names_to = "Category", values_to = "Pop")
+
+ggplot(state_summary_long_pt_avg, aes(x = Category, y = state_abb, fill = Pop)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "State Populations affected (Avg)",
+       x = "Severity Levels",
+       y = "State") + 
+  theme_minimal()
+```
+Similar to the total populations affected, the same states yield higher averages than the rest. Although the scale is lower overall, it still makes sense that higher populations will have higher averages. 
+
+\newpage
+Visualization: Total state populations affected by each drought severity level over time
 ```{r}
 drought_pop_total$map_date <- as.Date(as.character(drought_pop_total$map_date), format="%Y%m%d")
 ```
+
 ```{r}
 ggplot(drought_pop_total, aes(x=map_date)) + 
   geom_line(aes(y=D0, color="D0")) +
@@ -366,44 +415,115 @@ ggplot(drought_pop_total, aes(x=map_date)) +
   geom_line(aes(y=D2, color="D2")) + 
   geom_line(aes(y=D3, color="D3")) +
   geom_line(aes(y=D4, color="D4")) +
-  labs(title="Drought Categories Effect on Population Over Time",
+  labs(title="Total Population affected by Drought Severity Levels over Time",
        x="Date",
        y = "Area") +
-scale_color_manual(values = c("red", "blue", "green", "purple", "orange")) + theme_minimal()
+scale_color_manual(values = c("blue", "green", "yellow", "orange", "red")) + theme_minimal()
 ```
 
 
-From `drought_area_total` let's observe a State-level summary of how much total land area has been affected by each drought category
+\newpage
+**Focus on drought severity levels' affect on land area over time**
 
+
+First lets look at the total land area affected by each drought severity level over time
 ```{r}
 drought_categories <- c("D0", "D1", "D2", "D3", "D4")
-state_summary_at <- drought_area_total %>%
+```
+
+```{r}
+state_summary_at_sum <- drought_area_total %>%
   group_by(state_abb) %>% 
   summarise(across(all_of(drought_categories), sum, na.rm = TRUE))
-state_summary_at[1:10,]
+```
+
+
+```{r, include = FALSE}
+head(state_summary_at_sum)
+```
+
+
+Visualization: heatmap of total land area by state affected by each drought category, from `drought_area_total`
+```{r}
+state_summary_long_at_sum <- state_summary_at_sum %>%
+pivot_longer(cols = all_of(drought_categories), names_to = "Category", values_to = "Area")
+
+ggplot(state_summary_long_at_sum, aes(x = Category, y = state_abb, fill = Area)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Total Land Area affected",
+       x = "Severity Levels",
+       y = "State") + 
+  theme_minimal()
 ```
 
 
 
-Visualization: heatmap for total land area by state affected by each drought category, from `drought_area_total`
+
+\newpage
+From `drought_area_total` let's observe a State-level summary of the average land area has been affected by each drought severity level over time
 ```{r}
-state_summary_long_at <- state_summary_at %>%
+state_summary_at_avg <- drought_area_total %>%
+  group_by(state_abb) %>% 
+  summarise(across(all_of(drought_categories), mean, na.rm = TRUE))
+```
+
+
+```{r, include=FALSE}
+head(state_summary_at_avg)
+```
+
+
+Visualization: heatmap for average of total land area by state affected by each drought category, from `drought_area_total`
+```{r}
+state_summary_long_at_avg <- state_summary_at_avg %>%
 pivot_longer(cols = all_of(drought_categories), names_to = "Category", values_to = "Area")
 
-ggplot(state_summary_long_at, aes(x = Category, y = state_abb, fill = Area)) + 
+ggplot(state_summary_long_at_avg, aes(x = Category, y = state_abb, fill = Area)) + 
   geom_tile() +
   scale_fill_gradient(low = "white", high = "red") +
-  labs(title = "Drought Categories by State (Sum)",
-       x = "Drought Category",
+  labs(title = "Land Area affected (Avg)",
+       x = "Severity Levels",
        y = "State") + 
   theme_minimal()
 ```
 As we can see, Arkansas' total land area mostly experiences drought at the milder D0 category. States such Texas, Nevada, New Mexico, Colorado, California, and Arizona have a fairly even, extensive spread of land that has been affected up to drought levels of D3. Some even reach D4. This may be likely a sign of a steady increase in climate change and its effects increase yearly. 
 
 
+\newpage
+Lets get a clearer look by removing AK (since it mostly scaled in the D0 category)
+```{r}
+state_at_no_AK <- state_summary_at_avg %>%
+  filter(state_abb != "AK")
+```
+
+
+```{r, include=FALSE}
+head(state_at_no_AK)
+```
+
+```{r}
+state_summary_long_at_no_AK <- state_at_no_AK %>%
+pivot_longer(cols = all_of(drought_categories), names_to = "Category", values_to = "Area")
+
+ggplot(state_summary_long_at_no_AK, aes(x = Category, y = state_abb, fill = Area)) + 
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(title = "Land Area affected (Avg) *excluding AK*",
+       x = "Severity Levels",
+       y = "State") + 
+  theme_minimal()
+```
+By removing AK we can see a clearer picture of the average land area drought severity level over time. Note that the same states as before are among those who experienced higher drought severity levels over time.
+
+
+
+\newpage
+Visualization: total land area affected by the drought severity levels over time
 ```{r}
 drought_area_total$map_date <- as.Date(as.character(drought_area_total$map_date), format="%Y%m%d")
 ```
+
 ```{r}
 ggplot(drought_area_total, aes(x=map_date)) + 
   geom_line(aes(y=D0, color="D0")) +
@@ -417,10 +537,12 @@ ggplot(drought_area_total, aes(x=map_date)) +
   scale_x_date(limits = c(as.Date("2001-07-10"), 
                           as.Date("2021-07-30")),
                date_labels = "%Y") +
-  scale_color_manual(values = c("red", "blue", "green", "purple", "orange")) +
+  scale_color_manual(values = c("blue", "green", "yellow", "orange", "red")) +
   theme_minimal()
 ```
 We may observe there still steady spikes in D0-level droughts, as well as higher amounts of land affected by D4-level droughts. The D4-level droughts's effects more land over time and have much longer durations prior to ~2011. Among each drought category, there is a notable dip around the late 2010s, which is likely when the effects of icecaps and glaciers melting cooled the weather and alleviated land area affected by drought. Then we see a spike and increase in duration again entering 2021, which may represent the cyclical nature of regular seasonal changes or even that of climate change. 
+
+
 
 
 
