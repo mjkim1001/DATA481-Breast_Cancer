@@ -12,219 +12,59 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r}
+```{r, message=FALSE}
 library(tidyverse)
 library(lubridate)
 library(tidytuesdayR)
 ```
 
 
+Drought data from Github repository on ~ 2 decades worth of weekly recorded drought data across the US and territory Puerto Rico. 
+```{r}
+drought1 <- read.csv("../../common/RData/Drought_data/drought.csv")
+head(drought1)
+```
+
+```{r}
+dim(drought1)
+```
+The dataset has 325728 and 10 columns. Information includes drought levels and their effects on different states' land area and population on a weekly basis. 
+
+
+The github repository also split the drought data into different sub data sets for percent of land area affected, total land area affected, percent of population affected, and total population affected. We will manually split the data ourselves, but will load the Github data for reference. 
 
 **Load drought area percent data**
 ```{r}
-drought_area_pct <- read.csv("../RData/Drought_data/drought_area_pct.csv")
+drought_area_pct <- read.csv("../../common/RData/Drought_data/drought_area_pct.csv")
 head(drought_area_pct)
 ```
 ```{r}
 str(drought_area_pct)
 ```
-Change `ValidStart` and `ValidEnd` dates to numeric
-```{r}
-drought_area_pct$ValidStart=as.numeric(gsub("-","",drought_area_pct$ValidStart))
-drought_area_pct$ValidEnd=as.numeric(gsub("-","", drought_area_pct$ValidEnd))
-```
-
-```{r}
-head(drought_area_pct)
-```
-
 
 **Load area total data**
 
 ```{r}
-drought_area_total <- read.csv("../RData/Drought_data/drought_area_total.csv")
+drought_area_total <- read.csv("../../common/RData/Drought_data/drought_area_total.csv")
 head(drought_area_total)
 ```
-Change `ValidStart` and `ValidEnd` to numeric
-```{r}
-drought_area_total$ValidStart=as.numeric(gsub("-","",drought_area_total$ValidStart))
-drought_area_total$ValidEnd=as.numeric(gsub("-","", drought_area_total$ValidEnd))
-```
-```{r}
-head(drought_area_total)
-```
-
-
 
 **Load drought population percent**
 
 ```{r}
-drought_pop_pct <- read.csv("../RData/Drought_data/drought_pop_pct.csv")
+drought_pop_pct <- read.csv("../../common/RData/Drought_data/drought_pop_pct.csv")
 head(drought_pop_pct)
 ```
-Change `ValidStart` and `ValidEnd` dates to numeric
-```{r}
-drought_pop_pct$ValidStart=as.numeric(gsub("-","",drought_pop_pct$ValidStart))
-drought_pop_pct$ValidEnd=as.numeric(gsub("-","",drought_pop_pct$ValidEnd))
-```
-```{r}
-head(drought_pop_pct)
-```
-
 
 
 **Load drought population total data**
 ```{r}
-drought_pop_total <- read.csv("../RData/Drought_data/drought_pop_total.csv")
-head(drought_pop_total)
-```
-Change `ValidStart` and `ValidEnd` dates to numeric 
-```{r}
-drought_pop_total$ValidStart=as.numeric(gsub("-","",drought_pop_total$ValidStart))
-drought_pop_total$ValidEnd=as.numeric(gsub("-","",drought_pop_total$ValidEnd))
-```
-```{r}
+drought_pop_total <- read.csv("../../common/RData/Drought_data/drought_pop_total.csv")
 head(drought_pop_total)
 ```
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r, eval= FALSE, include=FALSE}
-library(tidyverse)
-
-read_and_prep <- function(file, type){
-  read_csv(paste0("2021/2021-07-20/", file)) %>% 
-    pivot_longer(cols = None:D4, names_to = "drought_lvl", values_to = type) %>% 
-    janitor::clean_names()
-  
-}
-
-state_area_pct <- read_and_prep("drought_area_pct.csv", "area_pct")
-state_area <- read_and_prep("drought_area_total.csv", "area_total")
-state_pct_pop <- read_and_prep("drought_pop_pct.csv", "pop_pct")
-state_pop <- read_and_prep("drought_pop_total.csv", "pop_total")
-
-all_df <- state_area_pct %>% 
-  left_join(state_area) %>% 
-  left_join(state_pct_pop) %>% 
-  left_join(state_pop) %>% 
-  rename(state_abb = state_abbreviation, stat_fmt = statistic_format_id)
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"The U.S. Drought Monitor is jointly produced by the National Drought Mitigation Center at the University of Nebraska-Lincoln, the United States Department of Agriculture, and the National Oceanic and Atmospheric Administration. Map courtesy of NDMC."
-
-Data set on U.S. Droughts from TidyTuesday Github data. Source: U.S. Drought Monitor which describes drought levels from 2001 to 2021 among each state. 
-
-Project: Analyzing drought conditions across the U.S. over ~20 years. State 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Our question of interest is if we can identify trends in how different drought levels affect land area and population over time. Our killer graph could be a time series of drought conditions on area and population; also, the killer graph could break the land down by region and identify geographical trends. 
 
 
 

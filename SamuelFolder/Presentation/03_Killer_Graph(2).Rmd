@@ -16,7 +16,7 @@ library(grid)
 
 ```{r}
 # Load dataset
-drought_pct <- read.csv("~/Downloads/drought_area_pct.csv")
+drought_pct <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2021/2021-07-20/drought.csv')
 
 # Convert ValidStart and ValidEnd columns to Date format
 drought_pct$ValidStart <- as.Date(drought_pct$ValidStart)

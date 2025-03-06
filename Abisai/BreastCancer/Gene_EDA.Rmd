@@ -20,7 +20,7 @@ This dataset maps Ensembl gene IDs to common gene names and gene types.
 
 
 ```{r}
-gene_map = read.csv("../RData/BreastCancer_data/gene_mappings.csv")
+gene_map = read.csv("../../common/RData/data766_breast_cancer/gene_mappings.csv")
 head(gene_map)
 ```
 
@@ -38,19 +38,34 @@ sum(is.na(gene_map))
 #### Distribution of Gene Types
 
 
-* **Question** : Which genetypes are important?
+```{r}
+head(gene_map)
+```
+```{r}
+head(gene_map %>%
+  count(GENETYPE))
+```
+
+There are 40 unique gene types. Their respective counts are on the right
+
+
+
+ **Question** : Which genetypes are important?
 
 
 ```{r}
 gene_map %>% 
-  count(GENETYPE, name = "Count") %>%  # Compute count per GENETYPE
+  #Calculates count for each gene type
+  count(GENETYPE, name = "Count") %>%  
+  #reorder the GENETYPE by its count, ascending order
   mutate(GENETYPE = fct_reorder(GENETYPE, Count)) %>%
+  #plot Gene types on x axis and their counts on the y axis
   ggplot(aes(x=GENETYPE, y = Count)) +
   geom_bar(stat = "identity") +
   scale_y_log10()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
 ```
-
+Here is a barplot of each gene type and its count
 
 \newpage
 
@@ -61,9 +76,9 @@ Measurements of the quantity of RNA (aka gene expression) for all genes in the h
 Columns are breast cancer samples. Rows are Ensemble gene IDs.
 
 ```{r}
-gene_exp = read.csv("../RData/BreastCancer_data/gene_expression.csv")
+gene_exp = read.csv("../../common/RData/data766_breast_cancer/gene_expression.csv")
 gene_exp = as_tibble(gene_exp)
-(gene_exp)
+head(gene_exp)
 (dim(gene_exp))
 ```
 
@@ -141,7 +156,7 @@ Metadata associated with samples (columns) from the gene expression matrix.
 
 
 ```{r}
-metadata = read.csv("../RData/BreastCancer_data/metadata.csv")
+metadata = read.csv("../../common/RData/data766_breast_cancer/metadata.csv")
 head(metadata)
 ```
 

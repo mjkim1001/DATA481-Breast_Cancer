@@ -1,0 +1,73 @@
+---
+title: "ExtractPAM50"
+author: "Samuel Carlton"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+
+expression_df <- read_csv("~/Downloads/data766_breast_cancer/gene_expression.csv", col_types = cols(), col_names = TRUE)
+mappings_df <- read_csv("~/Downloads/data766_breast_cancer/gene_mappings.csv", col_types = cols())
+metadata_df <- read_csv("~/Downloads/data766_breast_cancer/metadata.csv", col_types = cols())
+
+
+# Define gene lists
+PAM50_genes <- c("ACTR3B", "ANLN", "BAG1", "BCL2", "BIRC5", "BLVRA", "CCNB1", "CCNE1", 
+                 "CDC20", "CDC6", "CDH3", "CENPF", "CEP55", "CXXC5", "EGFR", "ERBB2", 
+                 "ESR1", "EXO1", "FGFR4", "FOXA1", "FOXC1", "GPR160", "GRB7", "KIF2C", 
+                 "KIF4A", "KRT14", "KRT17", "KRT5", "MAPT", "MDM2", "MELK", "MIA", 
+                 "MKI67", "MLPH", "MYBL2", "MYC", "NAT1", "ORC6", "PGR", "PHGDH", 
+                 "PTTG1", "RRM2", "SFRP1", "SLC39A6", "TMEM45B", "TYMS", "UBE2C", 
+                 "UBE2T", "FOXM1", "MMP")
+
+SCML_genes <- c("ESR1", "ERBB2", "AURKA")
+
+# Print the counts
+cat("Number of PAM 50 genes:", length(PAM50_genes), "\n")
+cat("Number of SCML genes:", length(SCML_genes), "\n")
+
+# Display the first few rows of expression_df
+print(head(expression_df, 5))
+
+```
+
+```{r}
+# Rename the first column to 'ENSEMBLID'
+colnames(expression_df)[1] <- "ENSEMBLID"
+
+# Now perform the merge
+library(dplyr)
+merged_df <- inner_join(expression_df, mappings_df, by = "ENSEMBLID")
+
+# Display the merged dataframe
+print(merged_df)
+```
+
+```{r}
+# Function to check if any PAM50 gene is a prefix of a gene in the dataframe
+is_pam50_gene <- function(gene) {
+  any(startsWith(gene, PAM50_genes))
+}
+
+# Filter rows where 'GENESYMBOL' starts with a PAM50 gene prefix
+pam50_df <- merged_df %>% filter(sapply(GENESYMBOL, is_pam50_gene))
+
+# Reset row index
+rownames(pam50_df) <- NULL
+
+# Display the filtered dataframe
+print(pam50_df)
+```
+
+```{r}
+# Filter rows where 'GENESYMBOL' is exactly in PAM50_genes
+only_pam50_df <- merged_df %>% filter(GENESYMBOL %in% PAM50_genes)
+
+# Reset row index
+rownames(only_pam50_df) <- NULL
+
+# Display the filtered dataframe
+print(only_pam50_df)
+```
