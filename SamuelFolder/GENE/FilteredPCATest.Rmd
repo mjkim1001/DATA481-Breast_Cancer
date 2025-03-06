@@ -1,0 +1,142 @@
+---
+title: "NormalizedBatch"
+author: "Samuel Carlton"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+mappings_df <- read_csv("~/Downloads/data766_breast_cancer/gene_mappings.csv", col_types = cols())
+head(mappings_df)
+```
+
+```{r}
+library(tidyverse)
+
+normalized_df <- read_csv("~/Downloads/normalized_expression.csv")
+head(normalized_df)
+
+```
+
+```{r}
+# Step 1: Ensure column names match before joining
+colnames(normalized_df)[1] <- "ENSEMBLID"
+
+# Step 2: Join and filter for protein-coding genes
+merged_df <- normalized_df %>%
+  inner_join(mappings_df, by = "ENSEMBLID") %>%
+  filter(GENETYPE == "protein_coding")  # Keep only protein-coding genes
+
+# Step 3: Remove non-numeric columns (ENSEMBLID, GENESYMBOL, GENETYPE)
+expression_only_df <- merged_df %>%
+  select(-ENSEMBLID, -GENESYMBOL, -GENETYPE)
+
+```
+
+```{r}
+# Step 4: Filter rows where the mean expression is less than 10
+filtered_df <- expression_only_df %>%
+  rowwise() %>%
+  mutate(mean_expression = mean(c_across(everything()), na.rm = TRUE)) %>%
+  filter(mean_expression >= 10) %>%
+  select(-mean_expression)  # Remove helper column
+
+# Step 5: Remove rows where 50% or more of the columns contain 0
+filtered_df <- filtered_df %>%
+  rowwise() %>%
+  mutate(zero_count = sum(c_across(everything()) == 0, na.rm = TRUE)) %>%
+  filter(zero_count < (ncol(filtered_df) * 0.5)) %>%
+  select(-zero_count)  # Remove helper column
+
+# Check final dataset
+print(dim(filtered_df))
+head(filtered_df)
+```
+
+```{r}
+dim(filtered_df)
+```
+
+```{r}
+# Calculate variance for each gene (row-wise), assuming all remaining columns are numeric
+filtered_df <- filtered_df %>%
+  rowwise() %>%
+  mutate(variance = var(c_across(everything()), na.rm = TRUE)) %>%
+  ungroup()
+
+# Select the top 2,000 genes with the highest variance
+top_variance_df <- filtered_df %>%
+  arrange(desc(variance)) %>%
+  slice_head(n = 2000) %>%
+  select(-variance)  # Remove variance column after filtering
+
+# Check output
+print(dim(top_variance_df))
+head(top_variance_df)
+
+```
+
+```{r}
+dim(top_variance_df)
+```
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+# Ensure column names are correct
+colnames(top_variance_df)[1] <- "ENSEMBLID"  # Rename first column if necessary
+
+# Identify columns to remove
+non_numeric_cols <- intersect(colnames(top_variance_df), c("ENSEMBLID", "GENESYMBOL", "GENETYPE"))
+
+# Remove only existing non-numeric columns
+pca_ready_df <- top_variance_df %>%
+  select(-all_of(non_numeric_cols))  # Keeps only expression data
+
+# Convert to matrix for PCA
+top_variance_matrix <- as.matrix(pca_ready_df)
+
+# Perform PCA (transpose so that samples are rows)
+pca_result <- prcomp(t(top_variance_matrix), scale. = TRUE)
+
+# Get variance explained by each PC
+var_explained <- (pca_result$sdev^2) / sum(pca_result$sdev^2)
+cumulative_var <- cumsum(var_explained)
+
+# Scree Plot - Top 20 PCs with Cumulative Variance
+scree_data <- data.frame(PC = 1:20, Variance = var_explained[1:20], Cumulative = cumulative_var[1:20])
+
+scree_plot <- ggplot(scree_data, aes(x = PC)) +
+  geom_bar(aes(y = Variance), stat = "identity", fill = "steelblue", alpha = 0.7) +
+  geom_line(aes(y = Cumulative), color = "red", size = 1) +
+  geom_point(aes(y = Cumulative), color = "red", size = 2) +
+  labs(title = "Scree Plot (Top 20 PCs)", x = "Principal Components", 
+       y = "Proportion of Variance Explained") +
+  theme_minimal()
+
+# Convert PCA results to a dataframe for plotting
+pca_df <- as.data.frame(pca_result$x) %>%
+  rownames_to_column(var = "Sample")
+
+# PCA Scatter Plot - PC1 vs PC2
+pca_plot_1_2 <- ggplot(pca_df, aes(x = PC1, y = PC2)) +
+  geom_point(alpha = 0.6, color = "blue") +
+  labs(title = "PCA Scatter Plot (PC1 vs PC2)", x = "PC1", y = "PC2") +
+  theme_minimal()
+
+# PCA Scatter Plot - PC3 vs PC4
+pca_plot_3_4 <- ggplot(pca_df, aes(x = PC3, y = PC4)) +
+  geom_point(alpha = 0.6, color = "darkred") +
+  labs(title = "PCA Scatter Plot (PC3 vs PC4)", x = "PC3", y = "PC4") +
+  theme_minimal()
+
+# Display plots
+print(scree_plot)
+print(pca_plot_1_2)
+print(pca_plot_3_4)
+
+```
+
+
+
+
