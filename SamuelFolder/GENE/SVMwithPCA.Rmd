@@ -1,0 +1,121 @@
+---
+title: "SVM_1"
+author: "Samuel Carlton"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+# Read in data that has filtered outliers
+filtered_df <- read.csv("~/Downloads/GeneSVMdata/NoOutliers_filtered_gene_expression.csv")
+filtered_df <- filtered_df %>%
+  select(-c(PAM50, ER, PR, HER2, TumorPurity, ProliferationScore))  # drop non-gene metadata
+head(filtered_df)
+```
+
+```{r}
+library(tidyverse)
+
+# Load dataset with random grouping
+metadata_df <- read_csv("~/Downloads/GeneSVMdata/metadata_randomGroup.csv", col_types = cols())
+metadata_df$Group <- as.numeric(metadata_df$Group)
+
+# Rename gene expression sample ID column to match metadata
+colnames(filtered_df)[1] <- "mRNA"
+
+# Merge datasets on mRNA (sample ID)
+merged_df <- inner_join(metadata_df, filtered_df, by = "mRNA")
+
+# Check the dimensions
+dim(merged_df)
+```
+
+```{r}
+numeric_features <- merged_df %>%
+  select(-c(mRNA, PAM50, TumorPurity, ER, PR, HER2, ProliferationScore, Group))
+pca_ready <- numeric_features %>% select(where(is.numeric))
+```
+
+```{r}
+dim(pca_ready)  # Should be 2000 since we filtered to 2000 genes
+colnames(pca_ready)[1:10]  # Print first 10 column names to check for any metadata
+```
+
+```{r}
+# Perform PCA on gene expression data
+pca_model <- prcomp(pca_ready, center = TRUE, scale. = TRUE)
+```
+
+```{r}
+# Extract the top 50 principal components
+pca_train <- as.data.frame(pca_model$x[, 1:50])
+
+# Add sample IDs for tracking
+pca_train$mRNA <- merged_df$mRNA
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(pca_train, aes(x = PC1, y = PC2, color = merged_df$PAM50)) +
+  geom_point() +
+  labs(title = "PCA of Gene Expression Data", x = "PC1", y = "PC2")
+```
+
+Prepare for SVM
+
+```{r}
+library(e1071)  # Load the SVM package
+library(tidyverse)
+
+# Merge PCA features with full metadata
+pca_merged <- inner_join(merged_df %>% select(mRNA, ER, PR, Group), pca_train, by = "mRNA")
+
+# Split into training (Groups 1–5) and test (Group 6)
+train_data <- pca_merged %>% filter(Group != 6)
+test_data  <- pca_merged %>% filter(Group == 6)
+
+# Select only PCA features for training and testing
+train_x <- train_data %>% select(starts_with("PC"))
+test_x  <- test_data %>% select(starts_with("PC"))
+
+# Targets (labels)
+train_y_er <- train_data$ER  # ER labels for training
+train_y_pr <- train_data$PR  # PR labels for training
+```
+
+```{r}
+# Convert ER and PR to factors for classification
+train_y_er <- as.factor(train_data$ER)
+train_y_pr <- as.factor(train_data$PR)
+```
+
+```{r}
+# Select only PCA features for training
+train_x <- train_data %>% select(starts_with("PC"))  # 50 predictors
+
+# Targets (labels)
+train_y_er <- as.factor(train_data$ER)  # ER labels for training
+train_y_pr <- as.factor(train_data$PR)  # PR labels for training
+```
+
+
+```{r}
+folds <- train_data$Group
+train_x = train_x %>% mutate(ER = factor(train_y_er))
+acc <- numeric(5)
+for (k in 1:5) {
+  test_idx <- which(folds == k)
+  train_fold <- train_x[-test_idx, ]
+  test_fold <- train_x[test_idx, ]
+  
+  model <- svm(ER ~ ., data = train_fold)
+  pred <- predict(model, newdata = test_fold)
+  acc[k] <- mean(pred == test_fold$ER)
+}
+
+#length(train_y_er)
+mean(acc)
+acc
+```
+Next: fit the model for all 5 groups (no cross validation), then predict for group 6
