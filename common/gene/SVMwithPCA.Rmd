@@ -1,0 +1,210 @@
+---
+title: "SVM_1"
+author: "Samuel Carlton"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+
+# Read in data that has filtered outliers
+filtered_df <- read.csv("../RData/NoOutlier_filtered_normalized.csv")
+filtered_df <- filtered_df %>%
+  select(-c(PAM50, ER))  # drop non-gene metadata
+head(filtered_df)
+```
+
+```{r}
+# Load dataset with random grouping
+metadata_df <- read_csv("../RData/metadata_randomGroup.csv", col_types = cols())
+metadata_df$Group <- as.numeric(metadata_df$Group)
+
+# Rename gene expression sample ID column to match metadata
+colnames(filtered_df)[1] <- "mRNA"
+
+# Merge datasets on mRNA (sample ID)
+merged_df <- inner_join(metadata_df, filtered_df, by = "mRNA")
+
+# Check the dimensions
+dim(merged_df)
+```
+
+```{r}
+numeric_features <- merged_df %>%
+  select(-c(mRNA, PAM50, TumorPurity, ER, PR, HER2, ProliferationScore, Group))
+pca_ready <- numeric_features %>% select(where(is.numeric))
+```
+
+```{r}
+dim(pca_ready)  # Should be 2000 since we filtered to 2000 genes
+colnames(pca_ready)[1:10]  # Print first 10 column names to check for any metadata
+```
+
+```{r}
+# Perform PCA on gene expression data
+pca_model <- prcomp(pca_ready, center = TRUE, scale. = FALSE)
+```
+
+```{r}
+# Extract the top 50 principal components
+pca_train <- as.data.frame(pca_model$x[, 1:50])
+
+# Add sample IDs for tracking
+pca_train$mRNA <- merged_df$mRNA
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(pca_train, aes(x = PC1, y = PC2, color = merged_df$PAM50)) +
+  geom_point() +
+  labs(title = "PCA of Gene Expression Data", x = "PC1", y = "PC2")
+```
+
+Prepare for SVM
+
+```{r}
+library(e1071)  # Load the SVM package
+library(tidyverse)
+
+# Merge PCA features with full metadata
+pca_merged <- inner_join(merged_df %>% select(mRNA, ER, PR, Group), pca_train, by = "mRNA")
+
+# Split into training (Groups 1–5) and test (Group 6)
+train_data <- pca_merged %>% filter(Group != 6)
+test_data  <- pca_merged %>% filter(Group == 6)
+
+# Select only PCA features for training and testing
+train_x <- train_data %>% select(starts_with("PC"))
+test_x  <- test_data %>% select(starts_with("PC"))
+
+# Targets (labels)
+train_y_er <- train_data$ER  # ER labels for training
+train_y_pr <- train_data$PR  # PR labels for training
+```
+
+```{r}
+# Convert ER and PR to factors for classification
+train_y_er <- as.factor(train_data$ER)
+train_y_pr <- as.factor(train_data$PR)
+```
+
+```{r}
+# Select only PCA features for training
+train_x <- train_data %>% select(starts_with("PC"))  # 50 predictors
+
+# Targets (labels)
+train_y_er <- as.factor(train_data$ER)  # ER labels for training
+train_y_pr <- as.factor(train_data$PR)  # PR labels for training
+```
+
+
+
+```{r}
+pc_range <- seq(5, 50, 5)  
+folds <- train_data$Group
+acc_vec <- numeric(length(pc_range))
+train_x = train_x %>% mutate(ER = factor(train_y_er))
+for (i in seq_along(pc_range)) {
+  n_pc <- pc_range[i]
+
+  acc <- numeric(5)
+  for (k in 1:5) {
+    test_idx <- which(folds == k)
+    train_fold <- train_x[-test_idx, 1:n_pc]
+    test_fold <- train_x[test_idx, 1:n_pc]
+    
+    train_fold = train_fold %>% mutate(ER = train_x$ER[-test_idx])
+    test_fold = test_fold %>% mutate(ER = train_x$ER[test_idx])
+    
+    model <- svm(ER ~ ., data = train_fold)
+    pred <- predict(model, newdata = test_fold)
+    acc[k] <- mean(pred == test_fold$ER)
+  }
+
+  acc_vec[i] <- mean(acc)
+}
+
+result_df <- data.frame(
+  n_pc = pc_range,
+  accuracy = acc_vec
+)
+
+ggplot(result_df, aes(x = n_pc, y = accuracy)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "PCA Dimension vs. SVM Accuracy",
+    x = "Number of Principal Components",
+    y = "Cross-validated Accuracy"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+n_pca = 6
+folds <- train_data$Group
+
+acc <- numeric(5)
+for (k in 1:5) {
+  test_idx <- which(folds == k)
+  train_fold <- train_x[-test_idx, 1:n_pca]
+  test_fold <- train_x[test_idx, 1:n_pca]
+  train_fold = train_fold %>% mutate(ER = train_x$ER[-test_idx])
+  test_fold = test_fold %>% mutate(ER = train_x$ER[test_idx])
+  
+  model <- svm(ER ~ ., data = train_fold)
+  pred <- predict(model, newdata = test_fold)
+  acc[k] <- mean(pred == test_fold$ER)
+}
+
+#length(train_y_er)
+mean(acc)
+acc
+```
+
+
+### Find for group 6
+
+```{r}
+n_pca = 6
+train_x = train_x %>% mutate(ER = factor(train_y_er))
+train_fold <- train_x[, 1:n_pca]
+train_fold = train_fold %>% mutate(ER = train_x$ER)
+model <- svm(ER ~ ., data = train_x)
+pred <- predict(model, newdata = test_x)
+```
+
+```{r}
+pred_svm = data.frame(mRNA = test_data$mRNA, ER_svm = pred)
+write.csv(pred_svm, "../RData/predicted_svm.csv", row.names = FALSE)
+```
+
+```{r}
+file_list <- c(
+  "../RData/predicted_rf.csv",
+  "../RData/predicted_svm.csv",
+  "../RData/predicted_lasso.csv",
+  "../RData/predicted_pca.csv"
+)
+
+merged_df <- read_csv(file_list[1])
+merged_df
+for (i in 2:length(file_list)) {
+  temp_df <- read_csv(file_list[i])
+  print(head(temp_df))
+  merged_df <- left_join(merged_df, temp_df, by = "mRNA")
+}
+```
+
+```{r}
+merged_df %>% 
+  pivot_longer(cols = c("ER_RF", "ER_svm", "ER_lasso", "ER_PCA"), names_to = "model", values_to = "predicted") %>%
+  ggplot(aes(x = mRNA, y = model, color = predicted)) +
+  geom_point() 
+
+merged = merged_df %>% select("mRNA", everything())
+write.csv(merged, "../RData/predicted_missing.csv", row.names = FALSE)
+```
